@@ -1,42 +1,56 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Image,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import auth from '@react-native-firebase/auth';
 
-const SignupScreen = () => {
+const SignupScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState(''); // State for error messages
 
+  // Handle Sign-up
   const handleSignup = () => {
-    console.log('Email:', email);
-    console.log('Password:', password);
-    console.log('Confirm Password:', confirmPassword);
+    if (password !== confirmPassword) {
+      setErrorMessage('Passwords do not match!');
+      return;
+    }
+
+    if (email && password) {
+      auth()
+        .createUserWithEmailAndPassword(email, password)
+        .then(() => {
+          console.log('User account created & signed in!');
+          navigation.navigate('Home'); // Navigate to home or main screen
+        })
+        .catch(error => {
+          if (error.code === 'auth/email-already-in-use') {
+            setErrorMessage('That email address is already in use!');
+          }
+          if (error.code === 'auth/invalid-email') {
+            setErrorMessage('That email address is invalid!');
+          } else {
+            setErrorMessage('An error occurred. Please try again.');
+          }
+          console.error(error);
+        });
+    } else {
+      setErrorMessage('Please fill out all fields!');
+    }
   };
 
   return (
     <View style={styles.container}>
-      {/* Logo Section */}
-      <Image
-        source={require('../../assets/Logo.png')} // Path to your logo
-        style={styles.logo}
-      />
-
-      {/* Title Section */}
+      <Image source={require('../../assets/Logo.png')} style={styles.logo} />
       <Text style={styles.title}>Create your Account</Text>
 
-      {/* Input Fields */}
+      {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
+
       <TextInput
         style={styles.input}
         placeholder="Email"
         placeholderTextColor="#8e8e8e"
         value={email}
-        onChangeText={(text) => setEmail(text)}
+        onChangeText={setEmail}
       />
       <TextInput
         style={styles.input}
@@ -44,7 +58,7 @@ const SignupScreen = () => {
         placeholderTextColor="#8e8e8e"
         secureTextEntry
         value={password}
-        onChangeText={(text) => setPassword(text)}
+        onChangeText={setPassword}
       />
       <TextInput
         style={styles.input}
@@ -52,35 +66,16 @@ const SignupScreen = () => {
         placeholderTextColor="#8e8e8e"
         secureTextEntry
         value={confirmPassword}
-        onChangeText={(text) => setConfirmPassword(text)}
+        onChangeText={setConfirmPassword}
       />
 
-      {/* Sign Up Button */}
       <TouchableOpacity style={styles.button} onPress={handleSignup}>
         <Text style={styles.buttonText}>Sign up</Text>
       </TouchableOpacity>
 
-      {/* Social Login Options */}
-      <Text style={styles.orText}>or sign in with</Text>
+      <Text style={styles.orText}>or sign up with</Text>
       <View style={styles.socialIcons}>
-        <TouchableOpacity>
-          <Image
-            source={require('../../assets/gmail.png')} // Path to Gmail icon
-            style={styles.socialIcon}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <Image
-            source={require('../../assets/facebook.png')} // Path to Facebook icon
-            style={styles.socialIcon}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <Image
-            source={require('../../assets/twitter.png')} // Path to Twitter icon
-            style={styles.socialIcon}
-          />
-        </TouchableOpacity>
+        {/* Add Social Media Icons Here */}
       </View>
     </View>
   );
@@ -145,5 +140,8 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
   },
 });
+
+
+
 
 export default SignupScreen;

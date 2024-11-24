@@ -19,6 +19,7 @@ const HomeScreen = () => {
         source={require('../../assets/Logo.png')}  // Path to your image
         style={styles.logo}
       />
+      
       <View style = {styles.buttonContainer}>
         <TouchableOpacity style ={[styles.loginButtononWrapper,{backgroundColor: colors.primary},]}  onPress = {handleLogin}>
        
@@ -72,4 +73,4 @@ const styles = StyleSheet.create({
     fontSize: 18,
   }
 
-});
+}); 

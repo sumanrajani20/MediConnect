@@ -1,12 +1,6 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Image,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import auth from '@react-native-firebase/auth';
 import { useNavigation } from '@react-navigation/native'; // Import the hook
 
 const LoginScreen = () => {
@@ -14,34 +8,54 @@ const LoginScreen = () => {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState(''); // State for error messages
 
+  // Handle Sign-in
   const handleLogin = () => {
-    console.log('Email:', email);
-    console.log('Password:', password);
+    if (email && password) {
+      auth()
+        .signInWithEmailAndPassword(email, password)
+        .then(() => {
+          console.log('User signed in successfully!');
+          navigation.navigate('Home'); // Navigate to home or main screen
+        })
+        .catch(error => {
+          if (error.code === 'auth/invalid-email') {
+            setErrorMessage('Invalid email address!');
+          }
+          if (error.code === 'auth/wrong-password') {
+            setErrorMessage('Wrong password!');
+          }
+          if (error.code === 'auth/user-not-found') {
+            setErrorMessage('No user found with this email!');
+          } else {
+            setErrorMessage('An error occurred. Please try again.');
+          }
+          console.error(error);
+        });
+    } else {
+      setErrorMessage('Please enter email and password');
+    }
   };
 
+  // Navigate to Sign Up Screen
   const handleSignup = () => {
-    navigation.navigate('Signup'); // Navigate to the Signup screen
+    navigation.navigate('Signup');
   };
 
   return (
     <View style={styles.container}>
-      {/* Logo Section */}
-      <Image
-        source={require('../../assets/Logo.png')} // Path to your logo
-        style={styles.logo}
-      />
+      <Image source={require('../../assets/Logo.png')} style={styles.logo} />
+      <Text style={styles.title}>Login to your Account</Text>
 
-      {/* Title Section */}
-      <Text style={styles.title}>Login your Account</Text>
+      {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
 
-      {/* Input Fields */}
       <TextInput
         style={styles.input}
         placeholder="Email"
         placeholderTextColor="#8e8e8e"
         value={email}
-        onChangeText={(text) => setEmail(text)}
+        onChangeText={setEmail}
       />
       <TextInput
         style={styles.input}
@@ -49,38 +63,18 @@ const LoginScreen = () => {
         placeholderTextColor="#8e8e8e"
         secureTextEntry
         value={password}
-        onChangeText={(text) => setPassword(text)}
+        onChangeText={setPassword}
       />
 
-      {/* Sign In Button */}
       <TouchableOpacity style={styles.button} onPress={handleLogin}>
         <Text style={styles.buttonText}>Sign in</Text>
       </TouchableOpacity>
 
-      {/* Social Login Options */}
       <Text style={styles.orText}>or sign in with</Text>
       <View style={styles.socialIcons}>
-        <TouchableOpacity>
-          <Image
-            source={require('../../assets/gmail.png')} // Path to Gmail icon
-            style={styles.socialIcon}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <Image
-            source={require('../../assets/facebook.png')} // Path to Facebook icon
-            style={styles.socialIcon}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <Image
-            source={require('../../assets/twitter.png')} // Path to Twitter icon
-            style={styles.socialIcon}
-          />
-        </TouchableOpacity>
+        {/* Add Social Media Icons Here */}
       </View>
 
-      {/* Sign Up Link */}
       <Text style={styles.footerText}>
         Don’t have an Account?{' '}
         <TouchableOpacity onPress={handleSignup}>
@@ -94,7 +88,7 @@ const LoginScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#d4efd5', // Light green background
+    backgroundColor: '#d4efd5',
     paddingHorizontal: 20,
     justifyContent: 'center',
     alignItems: 'center',
@@ -113,7 +107,7 @@ const styles = StyleSheet.create({
   input: {
     width: '100%',
     height: 50,
-    backgroundColor: '#e0e0e0', // Light grey background for input
+    backgroundColor: '#e0e0e0',
     borderRadius: 10,
     paddingHorizontal: 15,
     fontSize: 16,
@@ -123,7 +117,7 @@ const styles = StyleSheet.create({
   button: {
     width: '100%',
     height: 50,
-    backgroundColor: '#1976d2', // Blue button color
+    backgroundColor: '#1976d2',
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
@@ -144,11 +138,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 20,
   },
-  socialIcon: {
-    width: 40,
-    height: 40,
-    marginHorizontal: 10,
-  },
   footerText: {
     fontSize: 14,
     color: '#8e8e8e',
@@ -156,6 +145,11 @@ const styles = StyleSheet.create({
   signUpText: {
     color: '#1976d2',
     fontWeight: '600',
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 14,
+    marginBottom: 10,
   },
 });
 
