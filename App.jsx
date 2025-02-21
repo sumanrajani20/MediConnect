@@ -1,56 +1,42 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import auth from '@react-native-firebase/auth';
+import StackNavigator from './Navigations/StackNavigator';
 
-// Import your screens
-import HomeScreen from './Src/Screen/HomeScreen'; // Adjust paths as needed
-import LoginScreen from './Src/Screen/LoginScreen';
-import SignupScreen from './Src/Screen/SignupScreen';
-import TabNavigation from './Navigations/TabNavigation';
-
-const Stack = createNativeStackNavigator();
 
 const App = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // Check if the user is logged in when the app starts
-    const unsubscribe = auth().onAuthStateChanged(user => {
-      if (user) {
-        setIsAuthenticated(true); // User is logged in
-      } else {
-        setIsAuthenticated(false); // User is not logged in
+    const unsubscribe = auth().onAuthStateChanged(
+      (currentUser) => {
+        setUser(currentUser);
+        setIsLoading(false);
+      },
+      (error) => {
+        console.error('Auth Error:', error);
+        setIsLoading(false);
       }
-    });
+    );
 
-    // Clean up the subscription
     return unsubscribe;
   }, []);
 
+  if (isLoading) {
+    return (
+      <View className="flex-1 justify-center items-center bg-white">
+        <ActivityIndicator size="large" color="#4CAF50" />
+      </View>
+    );
+  }
+
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {/* Initial Flow: If the user is authenticated, go to TabNavigation */}
-        {isAuthenticated ? (
-          <Stack.Screen name="MainApp" component={TabNavigation} />
-        ) : (
-          <>
-            <Stack.Screen name="Home" component={HomeScreen} />
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="Signup" component={SignupScreen} />
-          </>
-        )}
-      </Stack.Navigator>
+      <StackNavigator user={user} />
     </NavigationContainer>
   );
 };
 
 export default App;
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});

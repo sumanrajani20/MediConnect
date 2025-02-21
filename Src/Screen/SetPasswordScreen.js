@@ -13,13 +13,10 @@ import {
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
-import auth from '@react-native-firebase/auth';
-
 
 const { width } = Dimensions.get('window');
 
-const SignupScreen = () => {
-  const [email, setEmail] = useState('');
+const SetPasswordScreen = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [secureTextEntry, setSecureTextEntry] = useState(true);
@@ -28,18 +25,12 @@ const SignupScreen = () => {
 
   useEffect(() => {
     navigation.setOptions({
-      headerTitle: 'Sign Up',
+      headerTitle: 'Set Password', // Centered title
       headerTitleAlign: 'center',
       headerStyle: {
-        height: 60,
+        backgroundColor: '#00C2D4',
       },
       headerTintColor: '#fff',
-      headerBackground: () => (
-        <LinearGradient
-          colors={['#33E4DB', '#00BBD3'] || ['#000', '#FFF']} // Default colors added
-          style={{ flex: 1 }}
-        />
-      ),
       headerLeft: () => (
         <TouchableOpacity
           onPress={() => navigation.goBack()}
@@ -57,19 +48,12 @@ const SignupScreen = () => {
       ),
     });
   }, [navigation]);
-  
-  const handleSignup = async () => {
-    try {
-      if (!email.trim() || !password.trim() || !confirmPassword.trim()) {
-        throw new Error('Please fill in all fields.');
-      }
-      if (password !== confirmPassword) {
-        throw new Error('Passwords do not match.');
-      }
-      await auth().createUserWithEmailAndPassword(email.trim(), password.trim());
-      navigation.replace('MainTabs');
-    } catch (error) {
-      console.error(error.message);
+
+  const handleSetPassword = () => {
+    if (password !== confirmPassword) {
+      alert('Passwords do not match!');
+    } else {
+      alert('Password set successfully!');
     }
   };
 
@@ -78,26 +62,7 @@ const SignupScreen = () => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
-      <View style={styles.imageContainer}>
-        <Image
-          source={require('../../assets/Doctor.jpg')} 
-          style={styles.image}
-          resizeMode="contain"
-        />
-      </View>
-
-      <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>Email</Text>
-        <TextInput
-          style={styles.input}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          value={email}
-          onChangeText={setEmail}
-          placeholder="example@example.com"
-          placeholderTextColor="#00C2D4"
-        />
-      </View>
+      
 
       <View style={styles.inputContainer}>
         <Text style={styles.inputLabel}>Password</Text>
@@ -139,9 +104,9 @@ const SignupScreen = () => {
         </View>
       </View>
 
-      <TouchableOpacity style={styles.button} onPress={handleSignup} activeOpacity={0.8}>
+      <TouchableOpacity style={styles.button} onPress={handleSetPassword} activeOpacity={0.8}>
         <LinearGradient colors={['#00C2D4', '#00A7C4']} style={styles.buttonGradient}>
-          <Text style={styles.buttonText}>Sign Up</Text>
+          <Text style={styles.buttonText}>Create New Password</Text>
         </LinearGradient>
       </TouchableOpacity>
     </KeyboardAvoidingView>
@@ -150,26 +115,27 @@ const SignupScreen = () => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+   flex: 1,
     backgroundColor: '#ffffff',
-    justifyContent: 'center',
+    justifyContent: 'flex-start', // Align items to the top
+    paddingHorizontal: 20,
+    paddingTop: 100, // Adjust the top padding as needed
   },
-  imageContainer: {
-    alignItems: 'center',
-    marginBottom: 30,
-  },
-  image: {
-    width: width * 0.6,
-    height: width * 0.4,
+  descriptionText: {
+    fontSize: 16,
+    color: '#6C6C6C',
+    textAlign: 'center',
+    marginBottom: 20,
+    fontWeight: '500', // Bold text for description
   },
   inputContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 15,
+    marginBottom: 50,
   },
   inputLabel: {
-    fontSize: 14,
+    fontSize: 20,
     color: '#000000',
-    marginBottom: 5,
+    marginBottom: 20,
+    fontWeight: '700', // Bold label text
   },
   input: {
     height: 50,
@@ -190,10 +156,10 @@ const styles = StyleSheet.create({
     top: 12,
   },
   button: {
-    marginHorizontal: 110,
+    marginHorizontal: 50,
     borderRadius: 25,
     overflow: 'hidden',
-    marginTop: 30,
+    marginTop: 0,
   },
   buttonGradient: {
     height: 50,
@@ -207,5 +173,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SignupScreen;
-
+export default SetPasswordScreen;

@@ -1,155 +1,184 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Dimensions,
+  KeyboardAvoidingView,
+  Platform,
+  Image,
+} from 'react-native';
+import { TextInput, Button } from 'react-native-paper';
+import LinearGradient from 'react-native-linear-gradient';
+import { useNavigation } from '@react-navigation/native';
 import auth from '@react-native-firebase/auth';
-import { useNavigation } from '@react-navigation/native'; // Import the hook
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+
+const { width } = Dimensions.get('window');
 
 const LoginScreen = () => {
-  const navigation = useNavigation(); // Use the hook to access navigation
-
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [errorMessage, setErrorMessage] = useState(''); // State for error messages
+  const [secureTextEntry, setSecureTextEntry] = useState(true);
+  const navigation = useNavigation();
 
-  // Handle Sign-in
-  const handleLogin = () => {
-    if (email && password) {
-      auth()
-        .signInWithEmailAndPassword(email, password)
-        .then(() => {
-          console.log('User signed in successfully!');
-          navigation.navigate('Home'); // Navigate to home or main screen
-        })
-        .catch(error => {
-          if (error.code === 'auth/invalid-email') {
-            setErrorMessage('Invalid email address!');
-          }
-          if (error.code === 'auth/wrong-password') {
-            setErrorMessage('Wrong password!');
-          }
-          if (error.code === 'auth/user-not-found') {
-            setErrorMessage('No user found with this email!');
-          } else {
-            setErrorMessage('An error occurred. Please try again.');
-          }
-          console.error(error);
-        });
-    } else {
-      setErrorMessage('Please enter email and password');
+  useEffect(() => {
+    navigation.setOptions({
+      headerTitle: 'Log In',
+      headerTitleAlign: 'center',
+      headerStyle: {
+        height: 60,
+      },
+      headerTintColor: '#fff',
+      headerBackground: () => (
+        <LinearGradient colors={['#33E4DB', '#00BBD3']} style={{ flex: 1 }} />
+      ),
+      headerLeft: () => (
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ paddingLeft: 10 }}>
+          <Image source={require('../../assets/custom-arrow.png')} style={{ width: 20, height: 20, resizeMode: 'contain' }} />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation]);
+
+  const handleLogin = async () => {
+    try {
+      if (!email.trim() || !password.trim()) {
+        throw new Error('Please enter both email and password.');
+      }
+      await auth().signInWithEmailAndPassword(email.trim(), password.trim());
+      navigation.replace('MainTabs');
+    } catch (error) {
+      console.error(error.message);
     }
   };
 
-  // Navigate to Sign Up Screen
-  const handleSignup = () => {
-    navigation.navigate('Signup');
-  };
-
   return (
-    <View style={styles.container}>
-      <Image source={require('../../assets/Logo.png')} style={styles.logo} />
-      <Text style={styles.title}>Login to your Account</Text>
-
-      {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
-
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        placeholderTextColor="#8e8e8e"
-        value={email}
-        onChangeText={setEmail}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        placeholderTextColor="#8e8e8e"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
-
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Sign in</Text>
-      </TouchableOpacity>
-
-      <Text style={styles.orText}>or sign in with</Text>
-      <View style={styles.socialIcons}>
-        {/* Add Social Media Icons Here */}
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
+      <View style={styles.imageContainer}>
+        <Image source={require('../../assets/Doctor.jpg')} style={styles.image} resizeMode="contain" />
       </View>
+
+      <View style={styles.inputContainer}>
+        <Text style={styles.inputLabel}>Email</Text>
+        <TextInput
+          mode="outlined"
+          style={styles.input}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          value={email}
+          onChangeText={setEmail}
+          placeholder="example@example.com"
+          placeholderTextColor="#00C2D4"
+          outlineColor="#E0E0E0"
+          activeOutlineColor="#00C2D4"
+        />
+      </View>
+
+      <View style={styles.inputContainer}>
+        <Text style={styles.inputLabel}>Password</Text>
+        <View style={styles.passwordWrapper}>
+          <TextInput
+            mode="outlined"
+            style={[styles.input, { flex: 1 }]}
+            secureTextEntry={secureTextEntry}
+            value={password}
+            onChangeText={setPassword}
+            placeholder="********"
+            placeholderTextColor="#00C2D4"
+            outlineColor="#E0E0E0"
+            activeOutlineColor="#00C2D4"
+          />
+          <TouchableOpacity
+            onPress={() => setSecureTextEntry(!secureTextEntry)}
+            style={styles.iconContainer}
+          >
+            <MaterialIcons
+              name={secureTextEntry ? 'visibility-off' : 'visibility'}
+              size={24}
+              color="#00C2D4"
+            />
+          </TouchableOpacity>
+        </View>
+        <TouchableOpacity style={styles.forgotPassword} onPress={() => navigation.navigate('SetPasswordScreen')}>
+          <Text style={styles.forgotText}>Forgot Password?</Text>
+        </TouchableOpacity>
+      </View>
+
+      <Button mode="contained" onPress={handleLogin} style={styles.button} buttonColor="#00A7C4" textColor="#ffffff">
+        Log In
+      </Button>
 
       <Text style={styles.footerText}>
         Don’t have an Account?{' '}
-        <TouchableOpacity onPress={handleSignup}>
-          <Text style={styles.signUpText}>Sign up</Text>
+        <TouchableOpacity onPress={() => navigation.navigate('SignupScreen')}>
+          <Text style={styles.signUpText}>Sign Up</Text>
         </TouchableOpacity>
       </Text>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#d4efd5',
-    paddingHorizontal: 20,
+    backgroundColor: '#ffffff',
     justifyContent: 'center',
+  },
+  imageContainer: {
     alignItems: 'center',
+    marginBottom: 30,
   },
-  logo: {
-    width: 150,
-    height: 150,
-    marginBottom: 20,
+  image: {
+    width: width * 0.6,
+    height: width * 0.4,
   },
-  title: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#2b2b2b',
-    marginBottom: 20,
+  inputContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 15,
+  },
+  inputLabel: {
+    fontSize: 16,
+    color: '#000000',
+    marginBottom: 5,
   },
   input: {
-    width: '100%',
-    height: 50,
-    backgroundColor: '#e0e0e0',
-    borderRadius: 10,
-    paddingHorizontal: 15,
+    backgroundColor: '#F5F5F5',
     fontSize: 16,
-    marginBottom: 15,
-    color: '#000',
+  },
+  passwordWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  iconContainer: {
+    position: 'absolute',
+    right: 10,
+    padding: 10,
+  },
+  forgotPassword: {
+    marginTop: 5,
+    alignSelf: 'flex-end',
+  },
+  forgotText: {
+    fontSize: 12,
+    color: '#33E4DB',
   },
   button: {
-    width: '100%',
-    height: 50,
-    backgroundColor: '#1976d2',
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  orText: {
-    fontSize: 14,
-    color: '#8e8e8e',
-    marginBottom: 15,
-  },
-  socialIcons: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: 20,
+    marginHorizontal: 110,
+    borderRadius: 25,
+    marginTop: 30,
   },
   footerText: {
     fontSize: 14,
-    color: '#8e8e8e',
+    color: '#6C6C6C',
+    textAlign: 'center',
+    marginTop: 10,
   },
   signUpText: {
-    color: '#1976d2',
+    color: '#00A7C4',
     fontWeight: '600',
-  },
-  errorText: {
-    color: 'red',
-    fontSize: 14,
-    marginBottom: 10,
   },
 });
 
