@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, Alert, ScrollView, Image } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import auth from '@react-native-firebase/auth';
-import Icon from 'react-native-vector-icons/Ionicons';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const Settings = ({ navigation }) => {
   const [isModalVisible, setModalVisible] = useState(false);
@@ -17,42 +17,64 @@ const Settings = ({ navigation }) => {
     setModalVisible(false); // Close the modal
     try {
       await auth().signOut();
-      navigation.replace('HomeScreen');
+      // Use navigation.reset to go back to the first screen
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'ZeroScreen' }],
+      });
     } catch (error) {
       Alert.alert('Error', 'Unable to sign out. Please try again.');
     }
   };
 
-  const renderItem = ({ item }) => (
-    <TouchableOpacity
-      style={styles.item}
-      onPress={() => {
-        if (item.action === 'signOut') {
-          setModalVisible(true); // Show the modal
-        } else if (item.id === '2') {
-          navigation.navigate('TermsAndConditions');
-        } else {
-          Alert.alert('Option Selected', `${item.title} clicked!`);
-        }
-      }}
-    >
-      <View style={styles.iconContainer}>
-        <Icon name={item.icon} size={24} color="#fff" />
-      </View>
-      <Text style={styles.itemText}>{item.title}</Text>
-      <Icon name="chevron-forward" size={20} color="#00BBD3" />
-    </TouchableOpacity>
-  );
+  const handleItemPress = (item) => {
+    if (item.action === 'signOut') {
+      setModalVisible(true); // Show the modal
+    } else if (item.id === '2') {
+      navigation.navigate('TermsAndConditions');
+    } else {
+      Alert.alert('Option Selected', `${item.title} clicked!`);
+    }
+  };
+  
+  // Handle back button press
+  const handleBack = () => {
+    navigation.goBack();
+  };
 
   return (
     <LinearGradient colors={['#33E4DB', '#00BBD3']} style={styles.container}>
-      <Text style={styles.header}>Settings</Text>
+      {/* Header with back button */}
+      <View style={styles.headerContainer}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={handleBack}
+        >
+          <Image
+            source={require('../../assets/custom-arrow.png')}
+            style={styles.backArrowImage}
+          />
+        </TouchableOpacity>
+        <Text style={styles.header}>Settings</Text>
+        <View style={styles.emptySpace} />
+      </View>
+      
       <View style={styles.listContainer}>
-        <FlatList
-          data={settingsOptions}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-        />
+        <ScrollView>
+          {settingsOptions.map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              style={styles.item}
+              onPress={() => handleItemPress(item)}
+            >
+              <View style={styles.iconContainer}>
+                <Ionicons name={item.icon} size={24} color="#fff" />
+              </View>
+              <Text style={styles.itemText}>{item.title}</Text>
+              <Ionicons name="chevron-forward" size={24} color="#aaa" />
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </View>
 
       {/* Modal for Sign Out */}
@@ -91,13 +113,33 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 40,
+    marginBottom: 20,
+    paddingHorizontal: 16,
+  },
+  backButton: {
+    padding: 8,
+    width: 40,
+  },
+  backArrowImage: {
+    width: 20,
+    height: 20,
+    resizeMode: 'contain',
+    tintColor: 'white',
+  },
   header: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#fff',
     textAlign: 'center',
-    marginTop: 40,
-    marginBottom: 20,
+    flex: 1,
+  },
+  emptySpace: {
+    width: 40,
   },
   listContainer: {
     backgroundColor: '#fff',

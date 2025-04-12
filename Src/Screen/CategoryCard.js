@@ -53,7 +53,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 75,
+    paddingTop: 90,
   },
   cardContainer: {
     width: '45%',

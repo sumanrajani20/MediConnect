@@ -23,6 +23,11 @@ target 'MediConnect' do
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
 
+  # Add Firebase dependencies
+  pod 'Firebase/Core'
+  pod 'Firebase/Auth'
+  pod 'Firebase/Firestore'
+
   target 'MediConnectTests' do
     inherit! :complete
     # Pods for testing

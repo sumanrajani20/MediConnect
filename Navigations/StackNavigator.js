@@ -21,6 +21,11 @@ import SetPasswordScreen from '../Src/Screen/SetPasswordScreen';
 import TermsAndConditions from '../Src/Screen/TermsAndConditions';
 import ZeroScreen from '../Src/Screen/ZeroScreen';
 import CategoryCard from '../Src/Screen/CategoryCard';
+import BloodPressureScreen from '../Src/Screen/BloodPressureScreen';
+import GlucoseLevelScreen from '../Src/Screen/GlucoseLevelScreen';
+import TemperatureScreen from '../Src/Screen/TemperatureScreen';
+import HeartRateScreen from '../Src/Screen/HeartRateScreen';
+
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -84,6 +89,7 @@ const StackNavigator = ({ user }) => {
           <Stack.Screen name="SignupScreen" component={SignupScreen} options={{ title: 'Sign Up' }} />
           <Stack.Screen name="SetPasswordScreen" component={SetPasswordScreen} options={{ title: 'Set Password' }} />
         </>
+        
       ) : (
         <>
           <Stack.Screen name="MainTabs" component={TabNavigator} options={{ headerShown: false }} />
@@ -91,17 +97,43 @@ const StackNavigator = ({ user }) => {
           <Stack.Screen name="Reminders" component={Reminders} options={{ title: 'Reminders' }} />
           <Stack.Screen name="LabResult" component={LabResult} options={{ title: 'Lab Results' }} />
           <Stack.Screen name="Radiology" component={Radiology} options={{ title: 'Radiology' }} />
+          
+     
+          
+          
+          {/* Vital Sign Detail Screens */}
+          <Stack.Screen 
+            name="BloodPressureScreen" 
+            component={BloodPressureScreen} 
+            options={{ headerShown: false }} 
+          />
+          <Stack.Screen 
+            name="GlucoseLevelScreen" 
+            component={GlucoseLevelScreen} 
+            options={{ headerShown: false }} 
+          />
+          <Stack.Screen 
+            name="TemperatureScreen" 
+            component={TemperatureScreen} 
+            options={{ headerShown: false }} 
+          />
+          <Stack.Screen 
+            name="HeartRateScreen" 
+            component={HeartRateScreen} 
+            options={{ headerShown: false }} 
+          />
+
           <Stack.Screen
-  name="CategoryScreen"
-  component={CategoryCard}
-  options={{
-    headerTitle: 'Categories',
-    headerTitleAlign: 'center',
-    headerStyle: { backgroundColor: '#00BBD3' },
-    headerTintColor: '#fff',
-    headerShadowVisible: false, // Shadow remove kar diya
-  }}
-/>
+            name="CategoryScreen"
+            component={CategoryCard}
+            options={{
+              headerTitle: 'Categories',
+              headerTitleAlign: 'center',
+              headerStyle: { backgroundColor: '#00BBD3' },
+              headerTintColor: '#fff',
+              headerShadowVisible: false, 
+            }}
+          />
           <Stack.Screen
             name="MedicalHistory"
             component={MedicalHistory}
@@ -112,8 +144,9 @@ const StackNavigator = ({ user }) => {
               headerTitleAlign: 'center',
             }}
           />
-          <Stack.Screen name="TermsAndConditions" component={TermsAndConditions} options={{ title: 'Terms & Conditions' }} />
+          <Stack.Screen name="TermsAndConditions" component={TermsAndConditions} options={{ title: 'Terms & Conditions' }} /> 
         </>
+        
       )}
     </Stack.Navigator>
   );

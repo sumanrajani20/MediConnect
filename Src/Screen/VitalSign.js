@@ -1,94 +1,169 @@
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
 import React from 'react';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, StatusBar, Image, Button } from 'react-native';
 
-const VitalSign = () => {
+const VitalSign = ({ navigation }) => {
+  const vitalData = [
+    {
+      id: 1,
+      title: "Blood Pressure",
+      value: "120/80",
+      unit: "mmHg",
+      status: "Your blood pressure is normal",
+      screen: "BloodPressureScreen",
+    },
+    {
+      id: 2,
+      title: "Glucose Level",
+      value: "95",
+      unit: "mg/dL",
+      status: "Your glucose level is normal",
+      screen: "GlucoseLevelScreen",
+    },
+    {
+      id: 3,
+      title: "Temperature",
+      value: "98.6",
+      unit: "°F",
+      status: "Your temperature is normal",
+      screen: "TemperatureScreen",
+    },
+    {
+      id: 4,
+      title: "Heart Rate",
+      value: "72",
+      unit: "BPM",
+      status: "Your heart rate is normal",
+      screen: "HeartRateScreen",
+    },
+  ];
+
+  const handleCardPress = (screenName) => {
+    navigation && navigation.navigate(screenName);
+  };
+
   return (
-    <ScrollView contentContainerStyle={styles.scrollContainer}>
-      <View style={styles.container}>
-        <Text style={styles.header}>Vital Signs</Text>
-
-        <View style={styles.vitalSignBox}>
-          <Text style={styles.label}>Heart Rate</Text>
-          <Text style={styles.value}>75 bpm</Text>
-        </View>
-
-        <View style={styles.vitalSignBox}>
-          <Text style={styles.label}>Blood Pressure</Text>
-          <Text style={styles.value}>120/80 mmHg</Text>
-        </View>
-
-        <View style={styles.vitalSignBox}>
-          <Text style={styles.label}>Temperature</Text>
-          <Text style={styles.value}>98.6°F</Text>
-        </View>
-
-        <View style={styles.vitalSignBox}>
-          <Text style={styles.label}>Respiration Rate</Text>
-          <Text style={styles.value}>16 breaths/min</Text>
-        </View>
-
-        <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>View More</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar backgroundColor="#00C2D4" barStyle="light-content" />
+      
+      {/* Custom Header */}
+      <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => navigation && navigation.goBack()}
+        >
+          <Image
+            source={require('../../assets/custom-arrow.png')}
+            style={styles.backArrowImage}
+          />
         </TouchableOpacity>
+        <Text style={styles.headerTitle}>Vital Sign</Text>
+        <View style={styles.emptySpace} />
       </View>
-    </ScrollView>
+      
+      {/* Cards Container */}
+      <View style={styles.container}>
+        <View style={styles.cardsWrapper}>
+          {vitalData.map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              style={styles.card}
+              onPress={() => handleCardPress(item.screen)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.title}>{item.title}</Text>
+              <Text style={styles.value}>
+                {item.value} <Text style={styles.unit}>{item.unit}</Text>
+              </Text>
+              <Text style={styles.status}>{item.status}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        
+        
+      </View>
+    </SafeAreaView>
   );
 };
 
-export default VitalSign;
-
 const styles = StyleSheet.create({
-  scrollContainer: {
-    flexGrow: 1,
-    justifyContent: 'center',
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
+  header: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 20,
+    justifyContent: 'space-between',
+    backgroundColor: '#00C2D4',
+    height: 56,
+    paddingHorizontal: 16,
+  },
+  backButton: {
+    padding: 8,
+    width: 40,
+  },
+  backArrowImage: {
+    width: 20,
+    height: 20,
+    resizeMode: 'contain',
+    tintColor: 'white',  // This will make any image white
+  },
+  headerTitle: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+    flex: 1,
+    textAlign: 'center',
+  },
+  emptySpace: {
+    width: 40, // To balance the header title in center
   },
   container: {
     flex: 1,
-    backgroundColor: '#f0f8ff',
-    width: '100%',
-    paddingHorizontal: 20,
-  },
-  header: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
-    textAlign: 'center',
-    marginVertical: 20,
-  },
-  vitalSignBox: {
-    backgroundColor: '#ffffff',
-    paddingVertical: 20,
-    paddingHorizontal: 15,
-    borderRadius: 12,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  label: {
-    fontSize: 18,
-    color: '#666',
-  },
-  value: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#333',
-    marginTop: 10,
-  },
-  button: {
-    backgroundColor: '#33E4DB',
-    paddingVertical: 15,
-    borderRadius: 25,
+    justifyContent: 'flex-start',
     alignItems: 'center',
-    marginTop: 30,
+    paddingTop: 25,
+    paddingHorizontal: 15,
   },
-  buttonText: {
-    color: '#fff',
+  cardsWrapper: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    width: '85%',
+    maxWidth: 500,
+  },
+  card: {
+    width: '48%',
+    borderRadius: 15,
+    marginBottom: 15,
+    padding: 15,
+    backgroundColor: '#00CDCE',
+  },
+  title: {
     fontSize: 16,
     fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 5,
   },
+  value: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  unit: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.8)',
+  },
+  status: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.9)',
+    marginTop: 5,
+  },
+  testButtonContainer: {
+    marginTop: 20,
+    width: '85%',
+    maxWidth: 500,
+  }
 });
+
+export default VitalSign;

@@ -10,7 +10,7 @@ import { PaperProvider } from 'react-native-paper';
 export default function Main() {
     return (
       <PaperProvider>
-        <App />
+         <App /> 
       </PaperProvider>
     );
   }

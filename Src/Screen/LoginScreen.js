@@ -21,28 +21,37 @@ const LoginScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [secureTextEntry, setSecureTextEntry] = useState(true);
+  const [errorMessage, setErrorMessage] = useState(''); // <-- Error state added
   const navigation = useNavigation();
 
-  useEffect(() => {
-    navigation.setOptions({
-      headerTitle: 'Log In',
-      headerTitleAlign: 'center',
-      headerStyle: {
-        height: 60,
-      },
-      headerTintColor: '#fff',
-      headerBackground: () => (
-        <LinearGradient colors={['#33E4DB', '#00BBD3']} style={{ flex: 1 }} />
-      ),
-      headerLeft: () => (
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ paddingLeft: 10 }}>
-          <Image source={require('../../assets/custom-arrow.png')} style={{ width: 20, height: 20, resizeMode: 'contain' }} />
-        </TouchableOpacity>
-      ),
-    });
-  }, [navigation]);
+   useEffect(() => {
+      navigation.setOptions({
+        headerTitle: 'Log IN', // Centered title
+        headerTitleAlign: 'right',
+        headerStyle: {
+          backgroundColor: '#00C2D4',
+        },
+        headerTintColor: '#fff',
+        headerLeft: () => (
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              paddingLeft: 10,
+            }}
+          >
+            <Image
+              source={require('../../assets/custom-arrow.png')} // Add your custom arrow here
+              style={{ width: 20, height: 20, resizeMode: 'contain' }}
+            />
+          </TouchableOpacity>
+        ),
+      });
+    }, [navigation]);
 
   const handleLogin = async () => {
+    setErrorMessage(''); // Reset error before login attempt
     try {
       if (!email.trim() || !password.trim()) {
         throw new Error('Please enter both email and password.');
@@ -50,7 +59,21 @@ const LoginScreen = () => {
       await auth().signInWithEmailAndPassword(email.trim(), password.trim());
       navigation.replace('MainTabs');
     } catch (error) {
-      console.error(error.message);
+      // Firebase-specific error handling
+      if (error.code === 'auth/invalid-credential') {
+        setErrorMessage('Incorrect email or password. Please try again.');
+      }
+      if (error.code === 'auth/invalid-email') {
+        setErrorMessage('Invalid email format. Please enter a valid email.');
+      } else if (error.code === 'auth/user-not-found') {
+        setErrorMessage('No account found with this email.');
+      } else if (error.code === 'auth/wrong-password') {
+        setErrorMessage('Incorrect password. Please try again.');
+      } else if (error.code === 'auth/too-many-requests') {
+        setErrorMessage('Too many failed attempts. Try again later.');
+      } else {
+        setErrorMessage(error.message); // Generic error message
+      }
     }
   };
 
@@ -105,6 +128,9 @@ const LoginScreen = () => {
           <Text style={styles.forgotText}>Forgot Password?</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Display error message */}
+      {errorMessage ? <Text style={styles.errorText}>{errorMessage}</Text> : null}
 
       <Button mode="contained" onPress={handleLogin} style={styles.button} buttonColor="#00A7C4" textColor="#ffffff">
         Log In
@@ -164,6 +190,12 @@ const styles = StyleSheet.create({
   forgotText: {
     fontSize: 12,
     color: '#33E4DB',
+  },
+  errorText: {
+    color: 'red',
+    textAlign: 'center',
+    marginVertical: 10,
+    fontSize: 14,
   },
   button: {
     marginHorizontal: 110,
