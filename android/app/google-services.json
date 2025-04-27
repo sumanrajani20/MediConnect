@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "1040551335338",
+    "project_id": "mediconnect-dc8e8",
+    "storage_bucket": "mediconnect-dc8e8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1040551335338:android:283ed102af7dfa32d147d3",
+        "android_client_info": {
+          "package_name": "com.awesomeproject"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB4XND0yFbzM3KYV9TDpHdqMeh5u6tsqlY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1040551335338:android:49bd5836bff3f822d147d3",
+        "android_client_info": {
+          "package_name": "com.mediconnect"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB4XND0yFbzM3KYV9TDpHdqMeh5u6tsqlY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
