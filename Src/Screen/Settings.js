@@ -7,37 +7,59 @@ import {
   TouchableOpacity,
   Modal,
   Alert,
-  Button,
+  TextInput,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import auth from '@react-native-firebase/auth';
 import Icon from 'react-native-vector-icons/Ionicons';
 import QRCode from 'react-native-qrcode-svg';
 
-
 import { generateShareToken } from '../../utls/generateShareToken';
 
 const Settings = ({ navigation }) => {
   const [isModalVisible, setModalVisible] = useState(false);
-
-  const user = auth().currentUser;
-
-
+  const [isAccountModalVisible, setAccountModalVisible] = useState(false);
   const [qrValue, setQrValue] = useState(null);
+  const [showQR, setShowQR] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const user = auth().currentUser;
+  const [displayName, setDisplayName] = useState(user?.displayName || '');
 
-  const createQR = async () => {
-    console.log('Creating QR Code...'); // Debugging
-    const token = await generateShareToken(user?.uid);
-    const shareUrl = `https://mediconn.netlify.app/?token=${token}`;
-    console.log('Generated QR Value:', shareUrl); // Debugging
-    setQrValue(shareUrl);
+  const toggleQR = async () => {
+    if (showQR) {
+      setShowQR(false);
+    } else {
+      const token = await generateShareToken(user?.uid);
+      const shareUrl = `https://mediconn.netlify.app/?token=${token}`;
+      setQrValue(shareUrl);
+      setShowQR(true);
+    }
   };
 
-
   const settingsOptions = [
-    { id: '1', title: 'Account', icon: 'person' },
-    { id: '2', title: 'Terms & Conditions', icon: 'document-text' },
-    { id: '3', title: 'Sign Out', icon: 'log-out', action: 'signOut' },
+    {
+      id: '0',
+      title: 'Share My Info (QR)',
+      icon: 'qr-code',
+      action: 'qr',
+    },
+    {
+      id: '1',
+      title: 'Account',
+      icon: 'person',
+      subtitle: user?.displayName || user?.email || 'Not available',
+    },
+    {
+      id: '2',
+      title: 'Terms & Conditions',
+      icon: 'document-text',
+    },
+    {
+      id: '3',
+      title: 'Sign Out',
+      icon: 'log-out',
+      action: 'signOut',
+    },
   ];
 
   const handleSignOut = async () => {
@@ -51,48 +73,55 @@ const Settings = ({ navigation }) => {
   };
 
   const renderItem = ({ item }) => (
-    <TouchableOpacity
-      style={styles.item}
-      onPress={() => {
-        if (item.action === 'signOut') {
-          setModalVisible(true);
-        } else if (item.id === '2') {
-          navigation.navigate('TermsAndConditions');
-        } else {
-          Alert.alert('Option Selected', `${item.title} clicked!`);
-        }
-      }}
-    >
-      <View style={styles.iconContainer}>
-        <Icon name={item.icon} size={24} color="#fff" />
-      </View>
-      <Text style={styles.itemText}>{item.title}</Text>
-      <Icon name="chevron-forward" size={20} color="#00BBD3" />
-    </TouchableOpacity>
+    <>
+      <TouchableOpacity
+        style={styles.item}
+        onPress={() => {
+          if (item.action === 'signOut') {
+            setModalVisible(true);
+          } else if (item.action === 'qr') {
+            toggleQR();
+          } else if (item.id === '2') {
+            navigation.navigate('TermsAndConditions');
+          } else if (item.id === '1') {
+            setAccountModalVisible(true);
+          } else {
+            Alert.alert('Option Selected', `${item.title} clicked!`);
+          }
+        }}
+      >
+        <View style={styles.iconContainer}>
+          <Icon name={item.icon} size={24} color="#fff" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.itemText}>{item.title}</Text>
+          {item.subtitle && (
+            <Text style={styles.subtitleText}>{item.subtitle}</Text>
+          )}
+        </View>
+        <Icon name="chevron-forward" size={20} color="#00BBD3" />
+      </TouchableOpacity>
+
+      {item.action === 'qr' && showQR && qrValue && (
+        <View style={styles.qrContainer}>
+          <QRCode value={qrValue} size={200} />
+        </View>
+      )}
+    </>
   );
 
   return (
     <LinearGradient colors={['#33E4DB', '#00BBD3']} style={styles.container}>
       <Text style={styles.header}>Settings</Text>
       <View style={styles.listContainer}>
-     
-
-      <Button backgroundColor='red' title="Generate QR Code" onPress={createQR} />
-      {qrValue && <QRCode  value={qrValue} size={200} />}
         <FlatList
           data={settingsOptions}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
         />
-      
-
-
-
-
-
-
       </View>
 
+      {/* Sign Out Confirmation Modal */}
       <Modal
         visible={isModalVisible}
         transparent={true}
@@ -116,6 +145,82 @@ const Settings = ({ navigation }) => {
               >
                 <Text style={styles.buttonText}>Yes, Logout</Text>
               </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Account Info Modal */}
+      <Modal
+        visible={isAccountModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setAccountModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Account Info</Text>
+
+            {isEditing ? (
+              <>
+                <Text style={styles.modalMessage}>Edit Name:</Text>
+                <TextInput
+                  value={displayName}
+                  onChangeText={setDisplayName}
+                  style={styles.textInput}
+                  placeholder="Enter display name"
+                />
+              </>
+            ) : (
+              <Text style={styles.modalMessage}>Name: {user?.displayName || 'N/A'}</Text>
+            )}
+
+            <Text style={styles.modalMessage}>Email: {user?.email || 'N/A'}</Text>
+            <Text style={styles.modalMessage}>UID: {user?.uid || 'N/A'}</Text>
+
+            <View style={{ flexDirection: 'row', marginTop: 20 }}>
+              {isEditing ? (
+                <>
+                  <TouchableOpacity
+                    style={[styles.button, styles.cancelButton, { marginRight: 5 }]}
+                    onPress={() => {
+                      setIsEditing(false);
+                      setDisplayName(user?.displayName || '');
+                    }}
+                  >
+                    <Text style={[styles.buttonText, styles.cancelButtonText]}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.button, styles.logoutButton, { marginLeft: 5 }]}
+                    onPress={async () => {
+                      try {
+                        await user.updateProfile({ displayName });
+                        Alert.alert('Success', 'Display name updated');
+                        setIsEditing(false);
+                      } catch (error) {
+                        Alert.alert('Error', 'Could not update name');
+                      }
+                    }}
+                  >
+                    <Text style={styles.buttonText}>Save</Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <>
+                  <TouchableOpacity
+                    style={[styles.button, styles.logoutButton]}
+                    onPress={() => setIsEditing(true)}
+                  >
+                    <Text style={styles.buttonText}>Edit</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.button, styles.cancelButton, { marginLeft: 10 }]}
+                    onPress={() => setAccountModalVisible(false)}
+                  >
+                    <Text style={[styles.buttonText, styles.cancelButtonText]}>Close</Text>
+                  </TouchableOpacity>
+                </>
+              )}
             </View>
           </View>
         </View>
@@ -160,8 +265,16 @@ const styles = StyleSheet.create({
   },
   itemText: {
     fontSize: 16,
-    flex: 1,
     color: '#333',
+  },
+  subtitleText: {
+    fontSize: 12,
+    color: '#888',
+    marginTop: 2,
+  },
+  qrContainer: {
+    alignItems: 'center',
+    marginVertical: 15,
   },
   modalContainer: {
     flex: 1,
@@ -170,7 +283,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
-    width: '80%',
+    width: '85%',
     backgroundColor: '#fff',
     borderRadius: 10,
     padding: 20,
@@ -186,7 +299,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#555',
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 10,
   },
   modalButtons: {
     flexDirection: 'row',
@@ -215,6 +328,15 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 16,
     color: '#fff',
+  },
+  textInput: {
+    width: '100%',
+    height: 40,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    marginBottom: 10,
   },
 });
 

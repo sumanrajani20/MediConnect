@@ -25,7 +25,7 @@ import BloodPressureScreen from '../Src/Screen/BloodPressureScreen';
 import GlucoseLevelScreen from '../Src/Screen/GlucoseLevelScreen';
 import TemperatureScreen from '../Src/Screen/TemperatureScreen';
 import HeartRateScreen from '../Src/Screen/HeartRateScreen';
-//import CustomMedicationReminder from '../Src/Screen/CustomMedicationReminder';
+
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -148,6 +148,7 @@ const StackNavigator = ({ user }) => {
             }}
           />
           <Stack.Screen name="TermsAndConditions" component={TermsAndConditions} options={{ title: 'Terms & Conditions' }} /> 
+         
         </>
         
       )}
