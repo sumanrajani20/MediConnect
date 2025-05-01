@@ -28,7 +28,7 @@ const Settings = ({ navigation }) => {
   const createQR = async () => {
     console.log('Creating QR Code...'); // Debugging
     const token = await generateShareToken(user?.uid);
-    const shareUrl = `http://192.168.100.70:3000?token=${token}`;
+    const shareUrl = `https://mediconn.netlify.app/?token=${token}`;
     console.log('Generated QR Value:', shareUrl); // Debugging
     setQrValue(shareUrl);
   };

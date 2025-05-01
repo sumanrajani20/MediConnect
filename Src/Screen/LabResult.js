@@ -5,9 +5,9 @@ import {
   Button,
   Image,
   StyleSheet,
+  TouchableOpacity,
   ActivityIndicator,
   PermissionsAndroid,
-  ScrollView,
   Alert,
   Platform,
   FlatList,
@@ -16,18 +16,45 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import axios from 'axios';
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
+import { useNavigation } from '@react-navigation/native';
 
 const LabResults = () => {
-  const [results, setResults] = useState([]); // State for lab results
+  const [results, setResults] = useState([]);
   const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [serverStatus, setServerStatus] = useState('');
+  const navigation = useNavigation();
 
-  // Replace with your computer's local IP address
-  const API_URL = 'http:/192.168.100.70:8000';
+  useEffect(() => {
+        navigation.setOptions({
+          headerTitle: 'Lab Results           ', // Centered title
+          headerTitleAlign: 'center',
+          headerStyle: {
+            backgroundColor: '#00C2D4',
+          },
+          headerTintColor: '#fff',
+          headerLeft: () => (
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                paddingLeft: 10,
+              }}
+            >
+              <Image
+                source={require('../../assets/custom-arrow.png')} // Add your custom arrow here
+                style={{ width: 20, height: 20, resizeMode: 'contain' }}
+              />
+            </TouchableOpacity>
+          ),
+        });
+      }, [navigation]);
+  
 
-  // Fetch Lab Results from Firestore
+  const API_URL = 'http:/10.102.129.50:8000';
+
   const fetchLabResults = async () => {
     try {
       const userId = auth().currentUser?.uid;
@@ -51,21 +78,17 @@ const LabResults = () => {
     }
   };
 
-  // Fetch lab results on component mount
   useEffect(() => {
     fetchLabResults();
   }, []);
 
   const handleImageSelect = async () => {
     try {
-      // Reset states
       setLoading(true);
       setError(null);
       setServerStatus('Starting process...');
 
-      // 1. Check Android permissions
       if (Platform.OS === 'android') {
-        setServerStatus('Checking permissions...');
         const granted = await PermissionsAndroid.request(
           PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
           {
@@ -79,8 +102,6 @@ const LabResults = () => {
         }
       }
 
-      // 2. Launch image picker
-      setServerStatus('Selecting image...');
       const result = await launchImageLibrary({
         mediaType: 'photo',
         quality: 0.8,
@@ -105,7 +126,6 @@ const LabResults = () => {
       setImage(selectedImage.uri);
       setServerStatus('Preparing upload...');
 
-      // 3. Prepare form data
       const formData = new FormData();
       formData.append('file', {
         uri: selectedImage.uri,
@@ -113,18 +133,14 @@ const LabResults = () => {
         type: 'image/jpeg',
       });
 
-      // 4. Send to API
       setServerStatus('Uploading to server...');
       const response = await axios.post(`${API_URL}/process-report`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        timeout: 30000, // 30 second timeout
+        timeout: 30000,
       });
 
-      console.log('API Response:', response.data); // Debug log
-
-      // 5. Handle response
       if (!response.data?.results) {
         throw new Error('Invalid response format');
       }
@@ -132,7 +148,6 @@ const LabResults = () => {
       const labResults = response.data.results;
       setServerStatus('Processing complete!');
 
-      // 6. Save to Firestore
       const userId = auth().currentUser?.uid;
       if (!userId) throw new Error('User not signed in');
 
@@ -150,12 +165,10 @@ const LabResults = () => {
         .doc(newLabResult.id)
         .set(newLabResult);
 
-      // Update the results state to include the new lab result
       setResults(prevResults => [newLabResult, ...prevResults]);
-
       Alert.alert('Success', 'Lab results saved successfully!');
     } catch (err) {
-      console.error('Error:', err); // Debug log
+      console.error('Error:', err);
       setError(err.message || 'Processing failed');
       setServerStatus('Error occurred');
     } finally {
@@ -164,55 +177,47 @@ const LabResults = () => {
   };
 
   const renderLabResultItem = ({ item }) => (
-    <View style={styles.resultItem}>
-      <Text style={styles.testName}>Date: {new Date(item.date).toLocaleDateString()}</Text>
-      <Text style={styles.testValue}>Results:</Text>
+    <View style={styles.resultCard}>
+      <Text style={styles.resultDate}>
+        📅 {new Date(item.date).toLocaleDateString()}
+      </Text>
       {item.results.map((result, index) => (
-        <Text key={index} style={styles.testValue}>
-          {result.test}: {result.result}
-        </Text>
+        <View key={index} style={styles.resultRow}>
+          <Text style={styles.testName}>{result.test}</Text>
+          <Text style={styles.testValue}>{result.result}</Text>
+        </View>
       ))}
     </View>
   );
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      {/* Header */}
-      <Text style={styles.header}>Medical Report Analyzer</Text>
-  
-      {/* Image Preview */}
+    <View style={styles.container}>
+      <Text style={styles.header}>🧪 Medical Report Analyzer</Text>
+
       {image && <Image source={{ uri: image }} style={styles.previewImage} />}
-  
-      {/* Upload Button */}
+
       <Button
         title={loading ? 'Processing...' : 'Upload Report'}
         onPress={handleImageSelect}
         disabled={loading}
         color="#4FE5E7"
       />
-  
-      {/* Status Messages */}
+
       {serverStatus ? <Text style={styles.statusText}>{serverStatus}</Text> : null}
-  
-      {/* Loading Indicator */}
       {loading && <ActivityIndicator size="large" color="#4FE5E7" style={styles.loader} />}
-  
-      {/* Error Display */}
       {error && <Text style={styles.errorText}>{error}</Text>}
-  
-      {/* Lab Results Display */}
-      <View style={{ flex: 1, marginTop: 20 }}>
-        {results.length > 0 ? (
-          <FlatList
-            data={results}
-            renderItem={renderLabResultItem}
-            keyExtractor={item => item.id}
-          />
-        ) : (
-          <Text style={styles.noResultsText}>No lab results found.</Text>
-        )}
-      </View>
-    </ScrollView>
+
+      {results.length > 0 ? (
+        <FlatList
+          data={results}
+          renderItem={renderLabResultItem}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.resultsList}
+        />
+      ) : (
+        <Text style={styles.noResultsText}>No lab results found.</Text>
+      )}
+    </View>
   );
 };
 
@@ -223,9 +228,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8FCFF',
   },
   header: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: 'bold',
-    color: '#13b9c8',
+    color: '#0C7C8A',
     marginBottom: 20,
     textAlign: 'center',
   },
@@ -233,13 +238,14 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 200,
     marginBottom: 20,
-    borderRadius: 8,
+    borderRadius: 10,
     backgroundColor: '#eee',
   },
   statusText: {
-    color: '#555',
+    color: '#444',
     textAlign: 'center',
     marginVertical: 10,
+    fontSize: 16,
   },
   loader: {
     marginVertical: 20,
@@ -248,28 +254,48 @@ const styles = StyleSheet.create({
     color: 'red',
     textAlign: 'center',
     marginVertical: 10,
-  },
-  resultsContainer: {
-    marginTop: 20,
-  },
-  resultItem: {
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  testName: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#222',
-  },
-  testValue: {
-    fontSize: 14,
-    color: '#4FE5E7',
   },
   noResultsText: {
     textAlign: 'center',
-    color: '#888',
+    color: '#999',
     marginTop: 20,
+    fontSize: 16,
+  },
+  resultsList: {
+    paddingVertical: 20,
+  },
+  resultCard: {
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 15,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+  },
+  resultDate: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#0C7C8A',
+    marginBottom: 10,
+  },
+  resultRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 4,
+  },
+  testName: {
+    fontSize: 16,
+    color: '#333',
+    fontWeight: '600',
+  },
+  testValue: {
+    fontSize: 16,
+    color: '#13b9c8',
+    fontWeight: '600',
   },
 });
 

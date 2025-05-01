@@ -11,7 +11,7 @@ import FirstScreen from '../Src/Screen/FirstScreen';
 import Home from '../Src/Screen/Home';
 import MedicalHistory from '../Src/Screen/MedicalHistory';
 import VitalSign from '../Src/Screen/VitalSign';
-import Profile from '../Src/Screen/Profile';
+//import Profile from '../Src/Screen/Profile';
 import Settings from '../Src/Screen/Settings';
 import Allergies from '../Src/Screen/Allergies';
 import Reminders from '../Src/Screen/Reminders';
@@ -72,7 +72,7 @@ const TabNavigator = () => (
     <Tab.Screen name="Home" component={Home} />
     <Tab.Screen name="MedicalHistory" component={MedicalHistory} />
     <Tab.Screen name="VitalSign" component={VitalSign} />
-    <Tab.Screen name="Profile" component={Profile} />
+    {/* <Tab.Screen name="Profile" component={Profile} /> */}
     <Tab.Screen name="Settings" component={Settings} />
   </Tab.Navigator>
 );
