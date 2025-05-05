@@ -53,7 +53,7 @@ const LabResults = () => {
       }, [navigation]);
   
 
-  const API_URL = 'http:/10.102.129.50:8000';
+  const API_URL = 'http:/10.102.128.137:8000';
 
   const fetchLabResults = async () => {
     try {

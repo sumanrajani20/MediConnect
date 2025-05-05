@@ -40,7 +40,7 @@ const MedicalHistory = ({ navigation }) => {
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   // API configuration
-  const API_URL = 'http://10.102.129.50:8000'; // Your backend URL
+  const API_URL = 'http://10.102.128.137:8000'; // Your backend URL
 
   // Navigation setup
   useEffect(() => {
