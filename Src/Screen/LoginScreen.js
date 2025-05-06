@@ -25,7 +25,7 @@ const LoginScreen = () => {
 
    useEffect(() => {
       navigation.setOptions({
-        headerTitle: 'Login          ', // Centered title
+        headerTitle: 'Login           ', // Centered title
         headerTitleAlign: 'center',
         headerStyle: {
           backgroundColor: '#00C2D4',

@@ -28,7 +28,7 @@ const SignupScreen = () => {
 
   useEffect(() => {
     navigation.setOptions({
-      headerTitle: 'Sign Up',
+      headerTitle: 'Sign up',
       headerTitleAlign: 'center',
       headerStyle: {
         height: 60,

@@ -13,11 +13,12 @@ import {
   StyleSheet,
 } from 'react-native';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
-import { Card ,Button} from 'react-native-paper';
+import { Card } from 'react-native-paper';
 import { saveBloodPressureReading } from '../../services/VitalSignsService';
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 import DateTimePicker from '@react-native-community/datetimepicker';
+
 // Constants
 const ITEM_HEIGHT = 40;
 const VISIBLE_ITEMS = 3;
@@ -118,6 +119,7 @@ const ScrollPicker = ({
     </View>
   );
 };
+
 const BloodPressureScreen = ({ navigation }) => {
   const [bpData, setBpData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -135,6 +137,7 @@ const BloodPressureScreen = ({ navigation }) => {
   const systolicValues = generatePickerValues(VALIDATION_RANGES.systolic.min, VALIDATION_RANGES.systolic.max);
   const diastolicValues = generatePickerValues(VALIDATION_RANGES.diastolic.min, VALIDATION_RANGES.diastolic.max);
   const pulseValues = generatePickerValues(VALIDATION_RANGES.pulse.min, VALIDATION_RANGES.pulse.max);
+  
   const formatDate = (date) => {
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-based
@@ -283,7 +286,8 @@ const BloodPressureScreen = ({ navigation }) => {
         </TouchableOpacity>
       </Card.Actions>
     </Card>
-  )
+  );
+
   if (loading) {
     return <ActivityIndicator animating={true} style={{ marginTop: 50 }} />;
   }
@@ -304,125 +308,136 @@ const BloodPressureScreen = ({ navigation }) => {
             <FontAwesome name="chevron-left" size={20} color="#fff" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Blood Pressure</Text>
-          <Button
-            mode="contained"
+          
+          {/* Updated SAVE button with pill design */}
+          <TouchableOpacity
+            style={[styles.saveButton, isSubmitting && styles.saveButtonDisabled]}
             onPress={saveReading}
             disabled={isSubmitting}
-            style={[styles.saveButton, isSubmitting && styles.saveButtonDisabled]}
           >
-            {isSubmitting ? 'Saving...' : 'SAVE'}
-          </Button>
+            <Text style={styles.saveButtonText}>
+              {isSubmitting ? 'Saving...' : 'SAVE'}
+            </Text>
+          </TouchableOpacity>
         </View>
+        
         <ScrollView style={styles.container}>
-         {/* Add/Edit Form */}
-<View style={styles.readingsCard}>
-  <View style={styles.readingsHeader}>
-    <Text style={styles.readingLabel}>Systolic</Text>
-    <Text style={styles.readingLabel}>Diastolic</Text>
-    <Text style={styles.readingLabel}>Pulse</Text>
-  </View>
+          {/* Add/Edit Form */}
+          <View style={styles.readingsCard}>
+            <View style={styles.readingsHeader}>
+              <Text style={styles.readingLabel}>Systolic</Text>
+              <Text style={styles.readingLabel}>Diastolic</Text>
+              <Text style={styles.readingLabel}>Pulse</Text>
+            </View>
 
-  <View style={styles.currentReading}>
-    <View style={styles.readingInputContainer}>
-      <ScrollPicker
-        items={systolicValues}
-        selectedValue={systolic}
-        onValueChange={setSystolic}
-      />
-    </View>
+            <View style={styles.currentReading}>
+              <View style={styles.readingInputContainer}>
+                <ScrollPicker
+                  items={systolicValues}
+                  selectedValue={systolic}
+                  onValueChange={setSystolic}
+                />
+              </View>
 
-    <View style={styles.readingInputContainer}>
-      <ScrollPicker
-        items={diastolicValues}
-        selectedValue={diastolic}
-        onValueChange={setDiastolic}
-      />
-    </View>
+              <View style={styles.readingInputContainer}>
+                <ScrollPicker
+                  items={diastolicValues}
+                  selectedValue={diastolic}
+                  onValueChange={setDiastolic}
+                />
+              </View>
 
-    <View style={styles.readingInputContainer}>
-      <ScrollPicker
-        items={pulseValues}
-        selectedValue={pulse}
-        onValueChange={setPulse}
-      />
-    </View>
-  </View>
+              <View style={styles.readingInputContainer}>
+                <ScrollPicker
+                  items={pulseValues}
+                  selectedValue={pulse}
+                  onValueChange={setPulse}
+                />
+              </View>
+            </View>
 
-  <View style={styles.classificationContainer}>
-    <Text style={styles.classificationLabel}>Classification:</Text>
-    <Text style={[
-      styles.classificationValue,
-      bpClassification.includes('High') && styles.highBP,
-      bpClassification === 'Normal' && styles.normalBP,
-      bpClassification === 'Elevated' && styles.elevatedBP,
-      bpClassification === 'Hypertensive Crisis' && styles.crisisBP
-    ]}>
-      {bpClassification}
-    </Text>
-  </View>
-</View>
+            <View style={styles.classificationContainer}>
+              <Text style={styles.classificationLabel}>Classification:</Text>
+              <Text style={[
+                styles.classificationValue,
+                bpClassification.includes('High') && styles.highBP,
+                bpClassification === 'Normal' && styles.normalBP,
+                bpClassification === 'Elevated' && styles.elevatedBP,
+                bpClassification === 'Hypertensive Crisis' && styles.crisisBP
+              ]}>
+                {bpClassification}
+              </Text>
+            </View>
+          </View>
 
-<View style={styles.dateTimeCard}>
-  <View style={styles.dateTimeRow}>
-    <View style={styles.dateTimeColumn}>
-      <Text style={styles.dateTimeLabel}>Date</Text>
-      <TouchableOpacity
-        style={styles.dateTimeButton}
-        onPress={() => setShowDatePicker(true)}
-      >
-        <Text style={styles.dateTimeValue}>{formatDate(date)}</Text>
-        <FontAwesome name="calendar" size={16} color="#999" />
-      </TouchableOpacity>
-    </View>
+          <View style={styles.dateTimeCard}>
+            <View style={styles.dateTimeRow}>
+              <View style={styles.dateTimeColumn}>
+                <Text style={styles.dateTimeLabel}>Date</Text>
+                <TouchableOpacity
+                  style={styles.dateTimeButton}
+                  onPress={() => setShowDatePicker(true)}
+                >
+                  <Text style={styles.dateTimeValue}>{formatDate(date)}</Text>
+                  <FontAwesome name="calendar" size={16} color="#999" />
+                </TouchableOpacity>
+              </View>
 
-    <View style={styles.dateTimeColumn}>
-      <Text style={styles.dateTimeLabel}>Time</Text>
-      <TouchableOpacity
-        style={styles.dateTimeButton}
-        onPress={() => setShowTimePicker(true)}
-      >
-        <Text style={styles.dateTimeValue}>{formatTime(date)}</Text>
-        <FontAwesome name="clock-o" size={16} color="#999" />
-      </TouchableOpacity>
-    </View>
-  </View>
-</View>
+              <View style={styles.dateTimeColumn}>
+                <Text style={styles.dateTimeLabel}>Time</Text>
+                <TouchableOpacity
+                  style={styles.dateTimeButton}
+                  onPress={() => setShowTimePicker(true)}
+                >
+                  <Text style={styles.dateTimeValue}>{formatTime(date)}</Text>
+                  <FontAwesome name="clock-o" size={16} color="#999" />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
 
-<View style={styles.notesCard}>
-  <Text style={styles.notesLabel}>Notes</Text>
-  <TextInput
-    style={styles.notesInput}
-    value={notes}
-    onChangeText={setNotes}
-    multiline
-    placeholder="Add notes here..."
-    placeholderTextColor="#999"
-  />
-</View>
-
-{showDatePicker && (
-  <DateTimePicker
-    value={date}
-    mode="date"
-    display="default"
-    onChange={(event, selectedDate) => {
-      setShowDatePicker(false);
-      if (selectedDate) setDate(selectedDate);
-    }}
-  />
-)}
-
-{showTimePicker && (
-  <DateTimePicker
-    value={date}
-    mode="time"
-    display="default"
-    onChange={(event, selectedTime) => {
-      setShowTimePicker(false);
-      if (selectedTime) setDate(selectedTime);
-    }}
-  />
-)}
+          <View style={styles.notesCard}>
+            <Text style={styles.notesLabel}>Notes</Text>
+            <TextInput
+              style={styles.notesInput}
+              value={notes}
+              onChangeText={setNotes}
+              placeholder="Add notes here..."
+              multiline
+            />
+          </View>
+          
+          {showDatePicker && (
+            <DateTimePicker
+              testID="datePicker"
+              value={date}
+              mode="date"
+              is24Hour={true}
+              display="default"
+              onChange={(event, selectedDate) => {
+                setShowDatePicker(false);
+                if (selectedDate) {
+                  setDate(selectedDate);
+                }
+              }}
+            />
+          )}
+          
+          {showTimePicker && (
+            <DateTimePicker
+              testID="timePicker"
+              value={date}
+              mode="time"
+              is24Hour={true}
+              display="default"
+              onChange={(event, selectedDate) => {
+                setShowTimePicker(false);
+                if (selectedDate) {
+                  setDate(selectedDate);
+                }
+              }}
+            />
+          )}
         </ScrollView>
       </SafeAreaView>
     );
@@ -439,44 +454,112 @@ const BloodPressureScreen = ({ navigation }) => {
           <FontAwesome name="chevron-left" size={20} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Blood Pressure</Text>
-        <Button
-          mode="contained"
+        
+        {/* Updated ADD button with pill design */}
+        <TouchableOpacity
+          style={styles.addButton}
           onPress={() => setIsAdding(true)}
-          style={styles.saveButton}
         >
-          ADD
-        </Button>
+          <Text style={styles.addButtonText}>ADD</Text>
+        </TouchableOpacity>
       </View>
+      
       <FlatList
         data={bpData}
-        keyExtractor={(item) => item.id}
+        keyExtractor={item => item.id}
         renderItem={renderItem}
+        contentContainerStyle={styles.listContainer}
         ListEmptyComponent={
-          <View style={{ padding: 20 }}>
-            <Text>No blood pressure records found.</Text>
+          <View style={styles.emptyList}>
+            <Text style={styles.emptyText}>No blood pressure records found.</Text>
           </View>
         }
       />
     </SafeAreaView>
   );
 };
-// Styles
+
+// Styles for the ScrollPicker component
+const pickerStyles = StyleSheet.create({
+  container: {
+    height: 120,
+    width: '100%',
+  },
+  label: {
+    fontSize: 16,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  pickerContainer: {
+    height: 120,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  itemContainer: {
+    height: ITEM_HEIGHT,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  item: {
+    fontSize: 16,
+    color: '#999',
+    textAlign: 'center',
+  },
+  selectedItem: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#000',
+  },
+  selectionIndicator: {
+    position: 'absolute',
+    top: '50%',
+    left: 0,
+    right: 0,
+    height: ITEM_HEIGHT,
+    marginTop: -ITEM_HEIGHT / 2,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: '#e0e0e0',
+    zIndex: 1,
+  },
+  topFade: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 40,
+    backgroundColor: 'rgba(255,255,255,0.8)',
+    zIndex: 2,
+  },
+  bottomFade: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 40,
+    backgroundColor: 'rgba(255,255,255,0.8)',
+    zIndex: 2,
+  },
+});
+
+// Styles for the main component
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
+  container: {
+    flex: 1,
+    padding: 15,
+  },
+  // New header styles to match Glucose Level screen
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#00C2D4',
+    backgroundColor: '#00C2D4', // Turquoise header
     height: 56,
     paddingHorizontal: 16,
-  },
-  backButton: {
-    padding: 8,
-    width: 40,
   },
   headerTitle: {
     color: 'white',
@@ -485,35 +568,69 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'center',
   },
-  saveButton: {
-    backgroundColor: '#FF6B6B',
+  backButton: {
+    padding: 8,
+    width: 40,
+  },
+  // New pill-shaped ADD button style to match Glucose Level
+  addButton: {
+    backgroundColor: '#FF7B7B', // Pink/coral color
     paddingVertical: 6,
     paddingHorizontal: 12,
-    borderRadius: 20,
+    borderRadius: 20, // Pill shape
+    minWidth: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  saveButtonDisabled: {
-    opacity: 0.6,
+  addButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  // New pill-shaped SAVE button style to match Glucose Level
+  saveButton: {
+    backgroundColor: '#FF7B7B', // Pink/coral color
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20, // Pill shape
+    minWidth: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   saveButtonText: {
     color: 'white',
     fontWeight: 'bold',
+    fontSize: 14,
   },
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
+  saveButtonDisabled: {
+    opacity: 0.6,
+  },
+  listContainer: {
+    padding: 10,
+  },
+  emptyList: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  emptyText: {
+    color: '#888',
+    fontSize: 16,
   },
   readingsCard: {
     backgroundColor: 'white',
-    margin: 15,
-    borderRadius: 15,
+    borderRadius: 10,
     padding: 15,
+    marginBottom: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   readingsHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    marginBottom: 10,
   },
   readingLabel: {
     flex: 1,
@@ -525,158 +642,103 @@ const styles = StyleSheet.create({
   currentReading: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
   },
   readingInputContainer: {
     flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-  },
-  dateTimeCard: {
-    backgroundColor: 'white',
-    margin: 15,
-    borderRadius: 15,
-    marginTop: 10,
-  },
-  dateTimeRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 15,
-  },
-  dateTimeColumn: {
-    flex: 1,
-  },
-  dateTimeLabel: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
-  },
-  dateTimeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  dateTimeValue: {
-    fontSize: 16,
-    color: '#00CDCE',
-  },
-  notesCard: {
-    backgroundColor: 'white',
-    margin: 15,
-    borderRadius: 15,
-    padding: 15,
-    marginTop: 10,
-    marginBottom: 30,
-  },
-  notesLabel: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 15,
-  },
-  notesInput: {
-    height: 100,
-    textAlignVertical: 'top',
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    borderRadius: 4,
-    padding: 8,
-    color: '#333',
   },
   classificationContainer: {
+    marginTop: 15,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 10,
-    paddingTop: 10,
   },
   classificationLabel: {
     fontSize: 16,
+    marginRight: 8,
     color: '#555',
-    marginRight: 5,
   },
   classificationValue: {
     fontSize: 16,
     fontWeight: 'bold',
-  },
-  normalBP: {
-    color: '#4CAF50',
-  },
-  elevatedBP: {
-    color: '#FFC107',
+    color: '#888',
   },
   highBP: {
-    color: '#FF9800',
+    color: '#e53935',
+  },
+  normalBP: {
+    color: '#43a047',
+  },
+  elevatedBP: {
+    color: '#fb8c00',
   },
   crisisBP: {
-    color: '#F44336',
+    color: '#d32f2f',
   },
-});
-
-const pickerStyles = StyleSheet.create({
-  container: {
-    width: 80,
-    alignItems: 'center',
+  dateTimeCard: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
-  label: {
-    fontSize: 14,
-    color: '#555',
-    marginBottom: 5,
+  dateTimeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
-  pickerContainer: {
-    height: ITEM_HEIGHT * VISIBLE_ITEMS,
-    overflow: 'hidden',
-    position: 'relative',
+  dateTimeColumn: {
+    flex: 1,
+    paddingHorizontal: 5,
   },
-  itemContainer: {
-    height: ITEM_HEIGHT,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  item: {
-    fontSize: 20,
-    color: '#888',
-    textAlign: 'center',
-  },
-  selectedItem: {
-    color: '#333',
+  dateTimeLabel: {
+    fontSize: 16,
+    marginBottom: 8,
     fontWeight: 'bold',
-    fontSize: 26,
+    color: '#555',
   },
-  topFade: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: ITEM_HEIGHT,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    zIndex: 1,
+  dateTimeButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    backgroundColor: '#f9f9f9',
   },
-  bottomFade: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: ITEM_HEIGHT,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    zIndex: 1,
+  dateTimeValue: {
+    fontSize: 14,
+    color: '#333',
   },
-  selectionIndicator: {
-    position: 'absolute',
-    right: 0,
-    height: ITEM_HEIGHT,
-    top: ITEM_HEIGHT,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: '#ccc',
-    backgroundColor: 'rgba(0, 0, 0, 0.05)',
-    zIndex: 0,
+  notesCard: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  notesLabel: {
+    fontSize: 16,
+    marginBottom: 8,
+    fontWeight: 'bold',
+    color: '#555',
+  },
+  notesInput: {
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 4,
+    padding: 10,
+    minHeight: 80,
+    textAlignVertical: 'top',
   },
 });
 

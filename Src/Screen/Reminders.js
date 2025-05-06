@@ -13,8 +13,6 @@ import {
   Platform
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-// If you're using Firebase, import it properly
-// import { getApp } from 'firebase/app';
 
 // Safe toString helper
 const safeToString = (value) => {
@@ -22,16 +20,6 @@ const safeToString = (value) => {
     return '';
   }
   return value.toString();
-};
-
-// Custom arrow component
-const CustomArrow = () => {
-  return (
-    <View style={styles.arrowContainer}>
-      <View style={styles.arrowLine} />
-      <View style={styles.arrowHead} />
-    </View>
-  );
 };
 
 const CustomMedicationReminder = ({ navigation }) => {
@@ -67,7 +55,10 @@ const CustomMedicationReminder = ({ navigation }) => {
             onPress={() => navigation.goBack()} 
             style={styles.headerLeft}
           >
-            <CustomArrow />
+            <Image
+              source={require('../../assets/custom-arrow.png')}
+              style={styles.customArrowImage}
+            />
           </TouchableOpacity>
         ),
       });
@@ -118,20 +109,6 @@ const CustomMedicationReminder = ({ navigation }) => {
       saveMedications();
     }
   }, [medications, isLoading]);
-
-  // Test function to show reminder notification
-  const testReminderNotification = () => {
-    // Find a non-taken medication
-    const testMed = medications.find(med => !med.taken) || (medications.length > 0 ? medications[0] : null);
-    
-    if (testMed) {
-      setDueMedication(testMed);
-      setReminderModalVisible(true);
-      return;
-    }
-    
-    Alert.alert('No medications', 'No medications found to test reminder');
-  };
 
   // Function to check for medications that are due
   const checkDueMedications = () => {
@@ -398,60 +375,60 @@ const CustomMedicationReminder = ({ navigation }) => {
     // Custom header for standalone use
     return (
       <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton} 
-          onPress={() => Alert.alert('Back', 'Navigating back')}
-        >
-          <CustomArrow />
+        <TouchableOpacity style={styles.backButton}>
+          <Image
+            source={require('../../assets/custom-arrow.png')}
+            style={styles.customArrowImage}
+          />
         </TouchableOpacity>
-        <Text style={styles.headerText}>Medication Reminders</Text>
-        <View style={styles.headerRightSpace} />
+        <Text style={styles.headerTitle}>Medication Reminders</Text>
+        <View style={styles.rightButton} />
       </View>
     );
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Render header based on navigation context */}
+    <SafeAreaView style={styles.safeArea}>
       {renderHeader()}
-
-      <ScrollView style={styles.scrollView}>
-        {/* Time and Progress Display */}
-        <TimeDisplay />
-        <ProgressDisplay total={totalMeds} taken={takenMeds} />
+      
+      <ScrollView style={styles.container}>
+        {/* Progress Overview */}
+        <View style={styles.progressContainer}>
+          <View style={styles.progressCircle}>
+            <Text style={styles.progressText}>
+              {takenMeds}/{totalMeds}
+            </Text>
+            <Text style={styles.progressLabel}>Taken</Text>
+          </View>
+          
+          <View style={styles.progressBarContainer}>
+            <View style={styles.progressBarBackground}>
+              <View 
+                style={[
+                  styles.progressBarFill, 
+                  { width: `${totalMeds > 0 ? (takenMeds / totalMeds) * 100 : 0}%` }
+                ]} 
+              />
+            </View>
+            <Text style={styles.progressBarLabel}>
+              {totalMeds > 0 ? Math.round((takenMeds / totalMeds) * 100) : 0}% Complete
+            </Text>
+          </View>
+        </View>
         
         {/* Medication Sections */}
         {renderSection('Morning', morningMeds, styles.morningIcon)}
         {renderSection('Afternoon', afternoonMeds, styles.afternoonIcon)}
         {renderSection('Evening', eveningMeds, styles.eveningIcon)}
         
-        {/* Empty state */}
-        {(!medications || medications.length === 0) && !isLoading && (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>No medications scheduled for today</Text>
-            <Text style={styles.emptyStateSubtext}>Tap the "Add Medication" button to add your medications</Text>
-          </View>
-        )}
-        
-        {/* Extra space at bottom for floating button */}
-        <View style={{ height: 100 }} />
+        {/* Add button to trigger modal */}
+        <TouchableOpacity 
+          style={styles.addButton}
+          onPress={() => setModalVisible(true)}
+        >
+          <Text style={styles.addButtonText}>+ Add Medication</Text>
+        </TouchableOpacity>
       </ScrollView>
-
-      {/* Test Reminder Button */}
-      <TouchableOpacity 
-        style={styles.testButton}
-        onPress={testReminderNotification}
-      >
-        <Text style={styles.testButtonText}>Test Reminder</Text>
-      </TouchableOpacity>
-
-      {/* Add Button */}
-      <TouchableOpacity 
-        style={styles.addButton}
-        onPress={() => setModalVisible(true)}
-      >
-        <Text style={styles.addButtonText}>+ Add Medication</Text>
-      </TouchableOpacity>
       
       {/* Add Medication Modal */}
       <Modal
@@ -463,101 +440,86 @@ const CustomMedicationReminder = ({ navigation }) => {
           resetForm();
         }}
       >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Add New Medication</Text>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalView}>
+            <Text style={styles.modalTitle}>Add Medication</Text>
+            
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Medication Name</Text>
+              <TextInput
+                style={styles.input}
+                value={medicationName}
+                onChangeText={setMedicationName}
+                placeholder="e.g., Lisinopril"
+              />
             </View>
             
-            <View style={styles.modalBody}>
-              <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>Medication Name</Text>
-                <TextInput
-                  style={styles.formInput}
-                  value={medicationName}
-                  onChangeText={setMedicationName}
-                  placeholder="e.g., Aspirin"
-                />
-              </View>
-              
-              <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>Dosage</Text>
-                <TextInput
-                  style={styles.formInput}
-                  value={medicationDosage}
-                  onChangeText={setMedicationDosage}
-                  placeholder="e.g., 81mg"
-                />
-              </View>
-              
-              <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>Time</Text>
-                <TextInput
-                  style={styles.formInput}
-                  value={medicationTime}
-                  onChangeText={handleTimeChange}
-                  placeholder="HH:MM"
-                  keyboardType="numbers-and-punctuation"
-                />
-                <Text style={styles.timeHint}>Use 24-hour format (e.g., 13:00 for 1:00 PM)</Text>
-              </View>
-              
-              <View style={styles.formGroup}>
-                <Text style={styles.formLabel}>Period</Text>
-                <View style={styles.periodContainer}>
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Dosage</Text>
+              <TextInput
+                style={styles.input}
+                value={medicationDosage}
+                onChangeText={setMedicationDosage}
+                placeholder="e.g., 10mg"
+              />
+            </View>
+            
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Time</Text>
+              <TextInput
+                style={styles.input}
+                value={medicationTime}
+                onChangeText={handleTimeChange}
+                placeholder="hh:mm (24h)"
+                keyboardType="numbers-and-punctuation"
+              />
+              <Text style={styles.helperText}>
+                Format: 24-hour (e.g., 08:00 for 8 AM, 20:00 for 8 PM)
+              </Text>
+            </View>
+            
+            <View style={styles.formGroup}>
+              <Text style={styles.label}>Time Period</Text>
+              <View style={styles.periodButtonsContainer}>
+                {['Morning', 'Afternoon', 'Evening'].map((period) => (
                   <TouchableOpacity
+                    key={period}
                     style={[
-                      styles.periodOption,
-                      medicationPeriod === 'Morning' && styles.periodOptionSelected
+                      styles.periodButton,
+                      medicationPeriod === period && styles.activePeriodButton
                     ]}
-                    onPress={() => setMedicationPeriod('Morning')}
+                    onPress={() => setMedicationPeriod(period)}
                   >
-                    <View style={styles.morningIcon}></View>
-                    <Text style={styles.periodText}>Morning</Text>
+                    <Text 
+                      style={[
+                        styles.periodButtonText,
+                        medicationPeriod === period && styles.activePeriodButtonText
+                      ]}
+                    >
+                      {period}
+                    </Text>
                   </TouchableOpacity>
-                  
-                  <TouchableOpacity
-                    style={[
-                      styles.periodOption,
-                      medicationPeriod === 'Afternoon' && styles.periodOptionSelected
-                    ]}
-                    onPress={() => setMedicationPeriod('Afternoon')}
-                  >
-                    <View style={styles.afternoonIcon}></View>
-                    <Text style={styles.periodText}>Afternoon</Text>
-                  </TouchableOpacity>
-                  
-                  <TouchableOpacity
-                    style={[
-                      styles.periodOption,
-                      medicationPeriod === 'Evening' && styles.periodOptionSelected
-                    ]}
-                    onPress={() => setMedicationPeriod('Evening')}
-                  >
-                    <View style={styles.eveningIcon}></View>
-                    <Text style={styles.periodText}>Evening</Text>
-                  </TouchableOpacity>
-                </View>
+                ))}
               </View>
+            </View>
+            
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.button, styles.buttonCancel]}
+                onPress={() => {
+                  setModalVisible(false);
+                  resetForm();
+                }}
+              >
+                <Text style={styles.buttonCancelText}>Cancel</Text>
+              </TouchableOpacity>
               
-              <View style={styles.modalActions}>
-                <TouchableOpacity
-                  style={styles.cancelButton}
-                  onPress={() => {
-                    setModalVisible(false);
-                    resetForm();
-                  }}
-                >
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity
-                  style={styles.submitButton}
-                  onPress={addMedication}
-                >
-                  <Text style={styles.submitButtonText}>Add Medication</Text>
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity
+                style={[styles.button, styles.buttonSave]}
+                onPress={addMedication}
+              >
+                <Text style={styles.buttonSaveText}>Save</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </View>
@@ -568,43 +530,41 @@ const CustomMedicationReminder = ({ navigation }) => {
         animationType="slide"
         transparent={true}
         visible={reminderModalVisible}
-        onRequestClose={() => {
-          setReminderModalVisible(false);
-        }}
+        onRequestClose={() => setReminderModalVisible(false)}
       >
-        <View style={styles.reminderModalContainer}>
-          <View style={styles.reminderModalContent}>
-            <View style={styles.reminderIcon}>
-              <Text style={styles.reminderIconText}>⏰</Text>
-            </View>
-            <Text style={styles.reminderTitle}>Medication Due</Text>
+        <View style={styles.modalOverlay}>
+          <View style={styles.reminderModalView}>
+            <Text style={styles.reminderTitle}>Medicine Reminder</Text>
+            
             {dueMedication && (
-              <Text style={styles.reminderText}>
-                It's time to take {dueMedication.name || 'your medication'} ({dueMedication.dosage || ''})
-              </Text>
+              <>
+                <View style={styles.reminderContent}>
+                  <Text style={styles.reminderMedName}>{dueMedication.name}</Text>
+                  <Text style={styles.reminderDetails}>
+                    {dueMedication.dosage} • {dueMedication.time}
+                  </Text>
+                </View>
+                
+                <View style={styles.reminderButtons}>
+                  <TouchableOpacity
+                    style={[styles.reminderButton, styles.buttonLater]}
+                    onPress={() => setReminderModalVisible(false)}
+                  >
+                    <Text style={styles.buttonLaterText}>Remind later</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    style={[styles.reminderButton, styles.buttonTaken]}
+                    onPress={() => {
+                      toggleTaken(dueMedication.id);
+                      setReminderModalVisible(false);
+                    }}
+                  >
+                    <Text style={styles.buttonTakenText}>Mark as taken</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
             )}
-            <View style={styles.reminderActions}>
-              <TouchableOpacity
-                style={styles.reminderButton}
-                onPress={() => {
-                  if (dueMedication) {
-                    toggleTaken(dueMedication.id);
-                  }
-                  setReminderModalVisible(false);
-                }}
-              >
-                <Text style={styles.reminderButtonText}>Mark as Taken</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={styles.reminderCancelButton}
-                onPress={() => {
-                  setReminderModalVisible(false);
-                }}
-              >
-                <Text style={styles.reminderCancelText}>Remind me later</Text>
-              </TouchableOpacity>
-            </View>
           </View>
         </View>
       </Modal>
@@ -612,270 +572,137 @@ const CustomMedicationReminder = ({ navigation }) => {
   );
 };
 
-// Time Display Component
-const TimeDisplay = () => {
-  const [currentTime, setCurrentTime] = useState('');
-  const [currentDate, setCurrentDate] = useState('');
-  
-  // Format time (12-hour format) 
-  const formatTime = (date) => {
-    try {
-      let hours = date.getHours();
-      let minutes = date.getMinutes();
-      const ampm = hours >= 12 ? 'PM' : 'AM';
-      hours = hours % 12;
-      hours = hours ? hours : 12; // 0 should be 12
-      minutes = minutes < 10 ? '0'+minutes : minutes;
-      return `${hours}:${minutes} ${ampm}`;
-    } catch (error) {
-      console.error('Error formatting time:', error);
-      return '--:-- --';
-    }
-  };
-  
-  // Format date
-  const formatDate = (date) => {
-    try {
-      const options = { weekday: 'short', month: 'short', day: 'numeric' };
-      return date.toLocaleDateString('en-US', options);
-    } catch (error) {
-      console.error('Error formatting date:', error);
-      return '----, --- --';
-    }
-  };
-  
-  // Update time and date
-  const updateDateTime = () => {
-    const now = new Date();
-    setCurrentTime(formatTime(now));
-    setCurrentDate(formatDate(now));
-  };
-  
-  useEffect(() => {
-    updateDateTime();
-    const interval = setInterval(updateDateTime, 10000); // Update every 10 seconds
-    return () => clearInterval(interval);
-  }, []);
-  
-  return (
-    <View style={styles.timeContainer}>
-      <View>
-        <Text style={styles.timeLabel}>Current Time</Text>
-        <Text style={styles.timeValue}>{currentTime}</Text>
-      </View>
-      <View>
-        <Text style={styles.timeLabel}>Current Date</Text>
-        <Text style={styles.dateValue}>{currentDate}</Text>
-      </View>
-    </View>
-  );
-};
-
-// Progress display component
-const ProgressDisplay = ({ total, taken }) => {
-  const percentage = total > 0 ? Math.round((taken / total) * 100) : 0;
-  
-  return (
-    <View style={styles.progressContainer}>
-      <Text style={styles.progressTitle}>Today's Progress</Text>
-      <View style={styles.progressContent}>
-        <View style={styles.progressHeader}>
-          <Text style={styles.progressText}>{taken}/{total} medications taken</Text>
-          <Text style={styles.progressPercentage}>{percentage}%</Text>
-        </View>
-        <View style={styles.progressBar}>
-          <View 
-            style={[
-              styles.progressBarFill, 
-              { width: `${percentage}%` }
-            ]} 
-          />
-        </View>
-      </View>
-    </View>
-  );
-};
-
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
-  scrollView: {
+  container: {
     flex: 1,
-    padding: 16,
   },
   header: {
-    backgroundColor: '#00C2D4',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 16,
-    paddingHorizontal: 12,
-    elevation: 0,
+    backgroundColor: '#00C2D4',
+    height: 60,
+    paddingHorizontal: 15,
   },
   headerLeft: {
-    paddingLeft: 10,
+    padding: 10,
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  // Custom arrow elements
-  arrowContainer: {
+  customArrowImage: {
     width: 20,
     height: 20,
-    justifyContent: 'center',
+    resizeMode: 'contain',
+    tintColor: 'white',
   },
-  arrowLine: {
-    width: 15,
-    height: 2,
-    backgroundColor: 'white',
-    position: 'absolute',
-    left: 0,
-  },
-  arrowHead: {
-    width: 12,
-    height: 12,
-    borderWidth: 2,
-    borderColor: 'white',
-    borderRightWidth: 0,
-    borderBottomWidth: 0,
-    transform: [{ rotate: '-45deg' }],
-    position: 'absolute',
-    left: 0,
-  },
-  headerText: {
+  headerTitle: {
     color: 'white',
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
-    flex: 1,
-    textAlign: 'center',
+    alignItems: 'center',
+    
   },
-  headerRightSpace: {
+  rightButton: {
     width: 40,
   },
-  
-  // Time display styles
-  timeContainer: {
-    backgroundColor: 'white',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 16,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 1,
-  },
-  timeLabel: {
-    fontSize: 14,
-    color: '#666',
-  },
-  timeValue: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  dateValue: {
-    fontSize: 18,
-    color: '#333',
-  },
-  
-  // Progress display styles
   progressContainer: {
-    marginBottom: 16,
-  },
-  progressTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    color: '#333',
-  },
-  progressContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     backgroundColor: 'white',
-    borderRadius: 8,
-    padding: 16,
-    elevation: 1,
+    padding: 15,
+    margin: 15,
+    borderRadius: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
-    shadowRadius: 1,
+    shadowRadius: 5,
+    elevation: 2,
   },
-  progressHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
+  progressCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#F8F8F8',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#00CDCE',
   },
   progressText: {
-    fontSize: 14,
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#00CDCE',
+  },
+  progressLabel: {
+    fontSize: 12,
     color: '#666',
   },
-  progressPercentage: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#333',
+  progressBarContainer: {
+    flex: 1,
+    marginLeft: 15,
   },
-  progressBar: {
+  progressBarBackground: {
     height: 8,
-    backgroundColor: '#e0e0e0',
+    backgroundColor: '#F0F0F0',
     borderRadius: 4,
     overflow: 'hidden',
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: '#4CAF50',
-    borderRadius: 4,
+    backgroundColor: '#00CDCE',
   },
-  
-  // Section styles
+  progressBarLabel: {
+    marginTop: 5,
+    fontSize: 14,
+    color: '#666',
+  },
   section: {
-    marginBottom: 16,
+    backgroundColor: 'white',
+    borderRadius: 10,
+    marginHorizontal: 15,
+    marginBottom: 15,
+    padding: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 2,
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   sectionIcon: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    marginRight: 8,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    marginRight: 10,
   },
   morningIcon: {
-    backgroundColor: '#FFB74D', // Orange/amber for morning
+    backgroundColor: '#FFD54F', // amber
   },
   afternoonIcon: {
-    backgroundColor: '#FF7043', // Deep orange for afternoon
+    backgroundColor: '#FF8A65', // deep orange
   },
   eveningIcon: {
-    backgroundColor: '#5C6BC0', // Indigo for evening
+    backgroundColor: '#7986CB', // indigo
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#333',
   },
-  
-  // Medication item styles
   medicationItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: 'white',
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 8,
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 1,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
   },
   medicationInfo: {
     flex: 1,
@@ -883,299 +710,245 @@ const styles = StyleSheet.create({
   medicationNameRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
   },
   medicationName: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: 'bold',
     color: '#333',
     marginRight: 8,
   },
   medicationDetails: {
+    fontSize: 14,
     color: '#666',
-    marginTop: 4,
-  },
-  
-  // Status badge styles
-  statusBadgeUpcoming: {
-    backgroundColor: '#e0e0e0',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
+    marginTop: 2,
   },
   statusBadgeTaken: {
-    backgroundColor: '#C8E6C9', // Light green
+    backgroundColor: '#4CAF50', // green
     paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
+    paddingVertical: 3,
+    borderRadius: 12,
+    marginBottom: 2,
   },
   statusBadgeDue: {
-    backgroundColor: '#FFECB3', // Light amber
+    backgroundColor: '#FF5722', // deep orange
     paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
+    paddingVertical: 3,
+    borderRadius: 12,
+    marginBottom: 2,
   },
   statusBadgeDueSoon: {
-    backgroundColor: '#FFECB3', // Light amber
+    backgroundColor: '#FFC107', // amber
     paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
+    paddingVertical: 3,
+    borderRadius: 12,
+    marginBottom: 2,
   },
   statusBadgeOverdue: {
-    backgroundColor: '#FFCDD2', // Light red
+    backgroundColor: '#F44336', // red
     paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
+    paddingVertical: 3,
+    borderRadius: 12,
+    marginBottom: 2,
+  },
+  statusBadgeUpcoming: {
+    backgroundColor: '#2196F3', // blue
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    marginBottom: 2,
   },
   statusBadgeText: {
-    fontSize: 12,
-    color: '#333',
+    color: 'white',
+    fontSize: 10,
+    fontWeight: 'bold',
   },
-  
-  // Checkbox styles
   checkbox: {
     width: 24,
     height: 24,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#ccc',
-    alignItems: 'center',
+    borderColor: '#00CDCE',
     justifyContent: 'center',
+    alignItems: 'center',
   },
   checkboxChecked: {
-    backgroundColor: '#4CAF50',
-    borderColor: '#4CAF50',
+    backgroundColor: '#00CDCE',
   },
   checkboxOverdue: {
     borderColor: '#F44336',
-    transform: [{ scale: 1.1 }],
   },
   checkmark: {
     color: 'white',
+    fontSize: 14,
     fontWeight: 'bold',
   },
-  
-  // Empty state
-  emptyState: {
-    backgroundColor: 'white',
-    padding: 24,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  emptyStateText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#333',
-    marginBottom: 8,
-  },
-  emptyStateSubtext: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-  },
-  
-  // Add Button
   addButton: {
     backgroundColor: '#FF7B7B',
+    margin: 15,
     padding: 15,
-    marginHorizontal: 16,
-    marginBottom: 16,
     borderRadius: 25,
     alignItems: 'center',
-    position: 'absolute',
-    bottom: 16,
-    left: 0,
-    right: 0,
-    elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   addButtonText: {
     color: 'white',
     fontWeight: 'bold',
     fontSize: 16,
   },
-  
-  // Test Button
-  testButton: {
-    backgroundColor: '#7B7BFF',
-    padding: 10,
-    marginHorizontal: 16,
-    marginBottom: 16,
-    borderRadius: 25,
-    alignItems: 'center',
-    position: 'absolute',
-    bottom: 80,
-    right: 16,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-  },
-  testButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-  
-  // Modal styles
-  modalContainer: {
+  modalOverlay: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
-  modalContent: {
-    width: '90%',
-    maxWidth: 400,
+  modalView: {
+    margin: 20,
     backgroundColor: 'white',
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  modalHeader: {
-    backgroundColor: '#00C2D4',
-    padding: 16,
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
-    color: 'white',
-  },
-  modalBody: {
-    padding: 16,
+    color: '#333',
+    marginBottom: 20,
+    textAlign: 'center',
   },
   formGroup: {
-    marginBottom: 16,
+    marginBottom: 15,
   },
-  formLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 6,
+  label: {
+    fontSize: 16,
     color: '#333',
+    marginBottom: 5,
   },
-  formInput: {
+  input: {
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 4,
+    borderColor: '#DDD',
+    borderRadius: 5,
     padding: 10,
     fontSize: 16,
   },
-  timeHint: {
+  helperText: {
     fontSize: 12,
     color: '#666',
-    marginTop: 4,
+    marginTop: 3,
   },
-  periodContainer: {
+  periodButtonsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
-  periodOption: {
+  periodButton: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 4,
     padding: 10,
+    borderWidth: 1,
+    borderColor: '#DDD',
+    alignItems: 'center',
     marginHorizontal: 2,
+    borderRadius: 5,
   },
-  periodOptionSelected: {
-    borderColor: '#00C2D4',
-    backgroundColor: 'rgba(0, 194, 212, 0.1)',
+  activePeriodButton: {
+    backgroundColor: '#00CDCE',
+    borderColor: '#00CDCE',
   },
-  periodText: {
-    marginLeft: 5,
-    fontSize: 14,
-  },
-  modalActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 16,
-  },
-  cancelButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    marginRight: 8,
-  },
-  cancelButtonText: {
+  periodButtonText: {
     color: '#666',
-    fontSize: 14,
-    fontWeight: '500',
   },
-  submitButton: {
-    backgroundColor: '#00C2D4',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 4,
-  },
-  submitButtonText: {
+  activePeriodButtonText: {
     color: 'white',
-    fontSize: 14,
-    fontWeight: '500',
+    fontWeight: 'bold',
   },
-  
-  // Reminder modal styles
-  reminderModalContainer: {
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 20,
+  },
+  button: {
+    padding: 12,
+    borderRadius: 5,
     flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    marginHorizontal: 5,
   },
-  reminderModalContent: {
-    width: '80%',
+  buttonCancel: {
+    backgroundColor: '#F0F0F0',
+  },
+  buttonSave: {
+    backgroundColor: '#00CDCE',
+  },
+  buttonCancelText: {
+    color: '#666',
+    fontWeight: 'bold',
+  },
+  buttonSaveText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  reminderModalView: {
+    margin: 20,
     backgroundColor: 'white',
-    borderRadius: 12,
+    borderRadius: 20,
     padding: 20,
-    alignItems: 'center',
-  },
-  reminderIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#FFECB3',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  reminderIconText: {
-    fontSize: 30,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
   },
   reminderTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  reminderText: {
-    fontSize: 16,
-    textAlign: 'center',
+    color: '#333',
     marginBottom: 20,
+    textAlign: 'center',
+  },
+  reminderContent: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  reminderMedName: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 5,
+  },
+  reminderDetails: {
+    fontSize: 16,
     color: '#666',
   },
-  reminderActions: {
-    width: '100%',
+  reminderButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
   reminderButton: {
-    backgroundColor: '#4CAF50',
     padding: 12,
-    borderRadius: 4,
+    borderRadius: 5,
+    flex: 1,
     alignItems: 'center',
-    marginBottom: 8,
+    marginHorizontal: 5,
   },
-  reminderButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '500',
+  buttonLater: {
+    backgroundColor: '#F0F0F0',
   },
-  reminderCancelButton: {
-    padding: 12,
-    alignItems: 'center',
+  buttonTaken: {
+    backgroundColor: '#00CDCE',
   },
-  reminderCancelText: {
+  buttonLaterText: {
     color: '#666',
-    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  buttonTakenText: {
+    color: 'white',
+    fontWeight: 'bold',
   },
 });
 

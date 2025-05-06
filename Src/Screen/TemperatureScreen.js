@@ -17,6 +17,7 @@ import { Switch } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
 
 const TemperatureScreen = ({ navigation }) => {
   const [isFahrenheit, setIsFahrenheit] = useState(true);
@@ -28,6 +29,8 @@ const TemperatureScreen = ({ navigation }) => {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [temperatureData, setTemperatureData] = useState([]);
   const [isAdding, setIsAdding] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     fetchTemperatureData();
@@ -110,14 +113,65 @@ const TemperatureScreen = ({ navigation }) => {
     return values;
   };
 
+  // Edit temperature record
+  const editTemperature = (item) => {
+    setEditingItem(item);
+    setTemperature(item.temperature.toString());
+    setIsFahrenheit(item.unit === '°F');
+    setNotes(item.notes || '');
+    setDate(new Date(item.date));
+    setIsAdding(true);
+  };
+
+  // Delete temperature record
+  const deleteTemperature = async (id) => {
+    try {
+      const user = auth().currentUser;
+      if (!user) throw new Error('User not authenticated');
+
+      Alert.alert(
+        'Delete Record',
+        'Are you sure you want to delete this temperature record?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                await firestore()
+                  .collection('users')
+                  .doc(user.uid)
+                  .collection('temperature')
+                  .doc(id)
+                  .delete();
+                
+                Alert.alert('Success', 'Temperature record deleted successfully!');
+                fetchTemperatureData();
+              } catch (error) {
+                console.error('Error deleting temperature data:', error);
+                Alert.alert('Error', 'Failed to delete temperature record.');
+              }
+            }
+          }
+        ]
+      );
+    } catch (error) {
+      console.error('Error initiating deletion:', error);
+      Alert.alert('Error', 'Could not process your request.');
+    }
+  };
+
   const saveTemperature = async () => {
     try {
+      setIsSubmitting(true);
       const user = auth().currentUser;
       if (!user) throw new Error('User not authenticated');
 
       const tempValue = parseFloat(temperature);
       if (isNaN(tempValue)) {
         Alert.alert('Error', 'Please select a valid temperature');
+        setIsSubmitting(false);
         return;
       }
 
@@ -127,35 +181,73 @@ const TemperatureScreen = ({ navigation }) => {
         status: getStatusText(),
         date: date.toISOString(),
         notes: notes.trim(),
-        createdAt: firestore.FieldValue.serverTimestamp(),
+        createdAt: editingItem ? editingItem.createdAt : firestore.FieldValue.serverTimestamp(),
+        updatedAt: firestore.FieldValue.serverTimestamp(),
       };
 
-      await firestore()
-        .collection('users')
-        .doc(user.uid)
-        .collection('temperature')
-        .add(temperatureData);
+      if (editingItem) {
+        // Update existing record
+        await firestore()
+          .collection('users')
+          .doc(user.uid)
+          .collection('temperature')
+          .doc(editingItem.id)
+          .update(temperatureData);
 
-      Alert.alert('Success', 'Temperature data saved successfully!');
+        Alert.alert('Success', 'Temperature record updated successfully!');
+      } else {
+        // Add new record
+        await firestore()
+          .collection('users')
+          .doc(user.uid)
+          .collection('temperature')
+          .add(temperatureData);
+
+        Alert.alert('Success', 'Temperature data saved successfully!');
+      }
+
       setIsAdding(false);
+      setEditingItem(null); // Clear editing state
       fetchTemperatureData();
     } catch (error) {
       console.error('Error saving temperature data:', error);
       Alert.alert('Error', 'Failed to save temperature data.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const renderItem = ({ item }) => (
-    <View style={styles.currentValueCard}>
-      <Text style={styles.currentValueTitle}>Temperature</Text>
-      <Text style={styles.currentValue}>
-        {item.temperature} <Text style={styles.unit}>{item.unit}</Text>
-      </Text>
-      <Text style={[styles.status, { color: getStatusColor(item.status) }]}>
-        {item.status}
-      </Text>
-      <Text style={styles.tapToEdit}>{item.date ? new Date(item.date).toLocaleString() : 'Unknown'}</Text>
-      <Text style={styles.tapToEdit}>{item.notes || 'No notes'}</Text>
+    <View style={styles.recordCard}>
+      <View style={styles.recordContent}>
+        <Text style={styles.currentValueTitle}>Temperature</Text>
+        <Text style={styles.currentValue}>
+          {item.temperature} <Text style={styles.unit}>{item.unit}</Text>
+        </Text>
+        <Text style={[styles.status, { color: getStatusColor(item.status) }]}>
+          {item.status}
+        </Text>
+        <Text style={styles.dateText}>Date: {item.date ? formatDate(new Date(item.date)) : 'Unknown'}</Text>
+        <Text style={styles.timeText}>Time: {item.date ? formatTime(new Date(item.date)) : 'Unknown'}</Text>
+        <Text style={styles.notesText}>Notes: {item.notes || 'No notes'}</Text>
+      </View>
+      <View style={styles.cardActions}>
+        {/* Edit Button */}
+        <TouchableOpacity
+          onPress={() => editTemperature(item)}
+          style={styles.actionButton}
+        >
+          <FontAwesome name="edit" size={20} color="#4CAF50" />
+        </TouchableOpacity>
+    
+        {/* Delete Button */}
+        <TouchableOpacity
+          onPress={() => deleteTemperature(item.id)}
+          style={styles.actionButton}
+        >
+          <FontAwesome name="trash" size={20} color="#F44336" />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
@@ -170,20 +262,32 @@ const TemperatureScreen = ({ navigation }) => {
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => setIsAdding(false)}
+            onPress={() => {
+              setIsAdding(false);
+              setEditingItem(null); // Clear editing state
+            }}
+            disabled={isSubmitting}
           >
             <Image
               source={require('../../assets/custom-arrow.png')}
               style={styles.backArrowImage}
             />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Add Temperature</Text>
-          <TouchableOpacity style={styles.saveButton} onPress={saveTemperature}>
-            <Text style={styles.saveButtonText}>SAVE</Text>
+          <Text style={styles.headerTitle}>
+            {editingItem ? 'Edit Temperature' : 'Add Temperature'}
+          </Text>
+          <TouchableOpacity 
+            style={[styles.saveButton, isSubmitting && styles.saveButtonDisabled]} 
+            onPress={saveTemperature}
+            disabled={isSubmitting}
+          >
+            <Text style={styles.saveButtonText}>
+              {isSubmitting ? 'SAVING...' : 'SAVE'}
+            </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Add Temperature Screen */}
+        {/* Add/Edit Temperature Screen */}
         <ScrollView style={styles.scrollView}>
           {/* Temperature Unit Toggle */}
           <View style={styles.toggleContainer}>
@@ -206,7 +310,7 @@ const TemperatureScreen = ({ navigation }) => {
             <Text style={styles.currentValue}>
               {temperature} <Text style={styles.unit}>{isFahrenheit ? '°F' : '°C'}</Text>
             </Text>
-            <Text style={[styles.status, { color: getStatusColor() }]}>{getStatusText()}</Text>
+            <Text style={[styles.status, { color: getStatusColor(getStatusText()) }]}>{getStatusText()}</Text>
             <Text style={styles.tapToEdit}>Tap to edit</Text>
           </TouchableOpacity>
 
@@ -367,15 +471,6 @@ const TemperatureScreen = ({ navigation }) => {
   );
 };
 
-
-
-
-
-
-
-
-
-
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -399,10 +494,6 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
     tintColor: 'white',
   },
-  backButtonText: {
-    fontSize: 24,
-    color: 'white',
-  },
   headerTitle: {
     color: 'white',
     fontSize: 18,
@@ -415,6 +506,12 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 20,
+    minWidth: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  saveButtonDisabled: {
+    opacity: 0.6,
   },
   saveButtonText: {
     color: 'white',
@@ -422,90 +519,146 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   scrollView: {
-    flex: 1,
     padding: 15,
   },
-  toggleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginVertical: 10,
-  },
-  toggleText: {
-    fontSize: 16,
-    fontWeight: '500',
-    marginHorizontal: 10,
-    color: '#666',
-  },
-  toggleActive: {
-    color: '#00CDCE',
-    fontWeight: 'bold',
-  },
-  currentValueCard: {
+  // Updated card styles for records with edit/delete buttons
+  recordCard: {
     backgroundColor: 'white',
-    borderRadius: 15,
-    padding: 20,
-    marginVertical: 15,
-    alignItems: 'center',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 15,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3,
+    elevation: 2,
+  },
+  recordContent: {
+    marginBottom: 10,
+  },
+  cardActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+    paddingTop: 10,
+  },
+  actionButton: {
+    marginHorizontal: 10,
+    padding: 5,
+  },
+  dateText: {
+    fontSize: 14,
+    color: '#555',
+    marginTop: 5,
+  },
+  timeText: {
+    fontSize: 14,
+    color: '#555',
+    marginBottom: 3,
+  },
+  notesText: {
+    fontSize: 14,
+    color: '#555',
+    marginTop: 5,
+  },
+  toggleContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  toggleText: {
+    fontSize: 16,
+    marginHorizontal: 15,
+    color: '#555',
+  },
+  toggleActive: {
+    fontWeight: 'bold',
+    color: '#00CDCE',
+  },
+  currentValueCard: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 20,
+    alignItems: 'center',
+    marginBottom: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
   },
   currentValueTitle: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 5,
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#444',
+    marginBottom: 10,
   },
   currentValue: {
-    fontSize: 48,
+    fontSize: 40,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#00CDCE',
+    marginBottom: 5,
   },
   unit: {
     fontSize: 24,
     fontWeight: 'normal',
   },
   status: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
-    marginTop: 5,
+    marginBottom: 5,
   },
   tapToEdit: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#888',
-    marginTop: 10,
   },
   notesContainer: {
     backgroundColor: 'white',
-    borderRadius: 15,
+    borderRadius: 10,
     padding: 15,
-    marginVertical: 10,
+    marginBottom: 15,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#444',
   },
   notesInput: {
+    backgroundColor: '#f9f9f9',
+    padding: 10,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: '#e0e0e0',
-    borderRadius: 8,
-    padding: 10,
-    height: 80,
+    minHeight: 100,
     textAlignVertical: 'top',
+    fontSize: 14,
   },
   dateTimeContainer: {
     backgroundColor: 'white',
-    borderRadius: 15,
+    borderRadius: 10,
     padding: 15,
-    marginVertical: 10,
+    marginBottom: 15,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 3,
+    elevation: 2,
   },
   dateTimeRow: {
     flexDirection: 'row',
@@ -516,11 +669,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#f9f9f9',
+    padding: 10,
     borderWidth: 1,
     borderColor: '#e0e0e0',
     borderRadius: 8,
-    padding: 10,
+    backgroundColor: '#f9f9f9',
     marginRight: 5,
   },
   timeSelector: {
@@ -528,150 +681,54 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#f9f9f9',
+    padding: 10,
     borderWidth: 1,
     borderColor: '#e0e0e0',
     borderRadius: 8,
-    padding: 10,
+    backgroundColor: '#f9f9f9',
     marginLeft: 5,
   },
   dateTimeText: {
     fontSize: 14,
-    color: '#444',
+    color: '#333',
   },
   iconText: {
     fontSize: 16,
-    color: '#00CDCE',
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 10,
-  },
-  chartContainer: {
-    backgroundColor: 'white',
-    borderRadius: 15,
-    padding: 15,
-    marginVertical: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  mockChartContainer: {
-    flexDirection: 'row',
-    height: 200,
-    marginTop: 10,
-  },
-  chartYAxis: {
-    width: 50,
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    paddingRight: 10,
-    paddingVertical: 15,
-  },
-  yAxisLabel: {
-    fontSize: 12,
-    color: '#888',
-  },
-  dataPointsContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'flex-end',
-    paddingVertical: 15,
-  },
-  dataPointColumn: {
-    alignItems: 'center',
-  },
-  dataPoint: {
-    width: 20,
-    borderRadius: 10,
-    marginBottom: 5,
-  },
-  dataPointLabel: {
-    fontSize: 10,
-    color: '#888',
-  },
-  guideContainer: {
-    backgroundColor: 'white',
-    borderRadius: 15,
-    padding: 15,
-    marginVertical: 10,
-    marginBottom: 30,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  guideItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  guideColor: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
-    marginRight: 10,
-  },
-  guideTextContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    flex: 1,
-  },
-  guideTitle: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#333',
-  },
-  guideValue: {
-    fontSize: 14,
-    color: '#666',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   modalContent: {
     backgroundColor: 'white',
-    borderRadius: 15,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     padding: 20,
-    width: '80%',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    maxHeight: '80%',
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 20,
-    color: '#333',
+    textAlign: 'center',
+    marginBottom: 15,
+    color: '#444',
   },
   tempScrollView: {
-    maxHeight: 250,
-    width: '100%',
+    maxHeight: 300,
   },
   tempItem: {
-    paddingVertical: 12,
+    padding: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    alignItems: 'center',
+    borderBottomColor: '#f0f0f0',
   },
   tempItemSelected: {
-    backgroundColor: '#f0f8ff',
+    backgroundColor: '#f0f9fa',
   },
   tempItemText: {
-    fontSize: 18,
-    color: '#333',
+    fontSize: 16,
+    textAlign: 'center',
+    color: '#444',
   },
   tempItemTextSelected: {
     fontWeight: 'bold',
@@ -680,16 +737,14 @@ const styles = StyleSheet.create({
   modalButtonRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: '100%',
     marginTop: 20,
   },
   modalButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
     flex: 1,
-    margin: 5,
+    padding: 12,
+    borderRadius: 8,
     alignItems: 'center',
+    marginHorizontal: 5,
   },
   cancelButton: {
     backgroundColor: '#f0f0f0',

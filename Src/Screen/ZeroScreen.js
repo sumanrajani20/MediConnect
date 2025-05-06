@@ -12,7 +12,7 @@ const ZeroScreen = ({ navigation }) => {
     Animated.sequence([
       Animated.timing(rotateAnim, {
         toValue: 1,
-        duration: 2000,
+        duration: 1000,
         useNativeDriver: true,
       }),
       Animated.parallel([

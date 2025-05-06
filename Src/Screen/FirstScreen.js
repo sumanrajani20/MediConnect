@@ -24,14 +24,14 @@ const FirstScreen = ({ navigation }) => {
         resizeMode="contain"
       />
       <Text 
-        variant="displayLarge" 
+        variant="displayMedium" 
         style={{ 
           color: '#00BBD3', 
           marginBottom: 20 
         }}>
         MediConnect
       </Text>
-      <Text 
+      {/* <Text 
         variant="bodyMedium" 
         style={{ 
           color: theme.colors.secondary,
@@ -40,7 +40,7 @@ const FirstScreen = ({ navigation }) => {
           marginBottom: 60
         }}>
         Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-      </Text>
+      </Text> */}
       <View style={{ 
         marginTop: 60,
         width: '100%',
@@ -58,7 +58,7 @@ const FirstScreen = ({ navigation }) => {
           }}
           labelStyle={{ fontSize: 16 }}
         >
-          Log In
+          Login
         </Button>
         <Button
           mode="outlined"
@@ -70,7 +70,7 @@ const FirstScreen = ({ navigation }) => {
           }}
           labelStyle={{ fontSize: 16, color: '#00BBD3' }}
         >
-          Sign Up
+          Sign up
         </Button>
       </View>
     </View>

@@ -1,39 +1,47 @@
 import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, StatusBar, Image, Button } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  TouchableOpacity,
+  StatusBar,
+  Image,
+} from 'react-native';
 
 const VitalSign = ({ navigation }) => {
   const vitalData = [
     {
       id: 1,
-      title: "Blood Pressure",
-      value: "120/80",
-      unit: "mmHg",
-      status: "Your blood pressure is normal",
-      screen: "BloodPressureScreen",
+      title: 'Blood Pressure',
+      value: '120/80',
+      unit: 'mmHg',
+      status: 'Your blood pressure is normal',
+      screen: 'BloodPressureScreen',
     },
     {
       id: 2,
-      title: "Glucose Level",
-      value: "95",
-      unit: "mg/dL",
-      status: "Your glucose level is normal",
-      screen: "GlucoseLevelScreen",
+      title: 'Glucose Level',
+      value: '95',
+      unit: 'mg/dL',
+      status: 'Your glucose level is normal',
+      screen: 'GlucoseLevelScreen',
     },
     {
       id: 3,
-      title: "Temperature",
-      value: "98.6",
-      unit: "°F",
-      status: "Your temperature is normal",
-      screen: "TemperatureScreen",
+      title: 'Temperature',
+      value: '98.6',
+      unit: '°F',
+      status: 'Your temperature is normal',
+      screen: 'TemperatureScreen',
     },
     {
       id: 4,
-      title: "Heart Rate",
-      value: "72",
-      unit: "BPM",
-      status: "Your heart rate is normal",
-      screen: "HeartRateScreen",
+      title: 'Heart Rate',
+      value: '72',
+      unit: 'BPM',
+      status: 'Your heart rate is normal',
+      screen: 'HeartRateScreen',
     },
   ];
 
@@ -44,10 +52,10 @@ const VitalSign = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar backgroundColor="#00C2D4" barStyle="light-content" />
-      
+
       {/* Custom Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation && navigation.goBack()}
         >
@@ -56,10 +64,10 @@ const VitalSign = ({ navigation }) => {
             style={styles.backArrowImage}
           />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Vital Sign</Text>
+        <Text style={styles.headerTitle}>Vital Signs</Text>
         <View style={styles.emptySpace} />
       </View>
-      
+
       {/* Cards Container */}
       <View style={styles.container}>
         <View style={styles.cardsWrapper}>
@@ -72,14 +80,13 @@ const VitalSign = ({ navigation }) => {
             >
               <Text style={styles.title}>{item.title}</Text>
               <Text style={styles.value}>
-                {item.value} <Text style={styles.unit}>{item.unit}</Text>
+                {item.value}{' '}
+                <Text style={styles.unit}>{item.unit}</Text>
               </Text>
               <Text style={styles.status}>{item.status}</Text>
             </TouchableOpacity>
           ))}
         </View>
-        
-        
       </View>
     </SafeAreaView>
   );
@@ -106,7 +113,7 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     resizeMode: 'contain',
-    tintColor: 'white',  // This will make any image white
+    tintColor: 'white',
   },
   headerTitle: {
     color: 'white',
@@ -116,7 +123,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   emptySpace: {
-    width: 40, // To balance the header title in center
+    width: 40,
   },
   container: {
     flex: 1,
@@ -129,15 +136,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    width: '85%',
+    width: '100%',
     maxWidth: 500,
   },
   card: {
-    width: '48%',
+    width: '47%',
+    aspectRatio: 1, // Square shape
     borderRadius: 15,
     marginBottom: 15,
     padding: 15,
     backgroundColor: '#00CDCE',
+    justifyContent: 'center',
   },
   title: {
     fontSize: 16,
@@ -159,11 +168,6 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.9)',
     marginTop: 5,
   },
-  testButtonContainer: {
-    marginTop: 20,
-    width: '85%',
-    maxWidth: 500,
-  }
 });
 
 export default VitalSign;

@@ -15,7 +15,7 @@ import {
   FlatList,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { saveHeartRateData, getHeartRateData } from '../../services/VitalSignsService'; // Import save and get functions
+import { saveHeartRateData, getHeartRateData } from '../../services/VitalSignsService';
 
 const HeartRateScreen = ({ navigation }) => {
   // State variables
@@ -25,7 +25,8 @@ const HeartRateScreen = ({ navigation }) => {
   const [showHeartRatePicker, setShowHeartRatePicker] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
-  const [heartRateRecords, setHeartRateRecords] = useState([]); // State for heart rate records
+  const [heartRateRecords, setHeartRateRecords] = useState([]);
+  const [activeTab, setActiveTab] = useState('input'); // 'input' or 'records'
 
   // Fetch heart rate records on component mount
   useEffect(() => {
@@ -34,7 +35,7 @@ const HeartRateScreen = ({ navigation }) => {
 
   const fetchHeartRateRecords = async () => {
     try {
-      const records = await getHeartRateData(); // Fetch data from Firestore
+      const records = await getHeartRateData();
       setHeartRateRecords(records);
     } catch (error) {
       console.error('Error fetching heart rate records:', error);
@@ -124,11 +125,11 @@ const HeartRateScreen = ({ navigation }) => {
     };
 
     try {
-      await saveHeartRateData(heartRateData); // Save to Firestore
+      await saveHeartRateData(heartRateData);
       Alert.alert('Success', 'Heart rate data saved successfully!');
-      fetchHeartRateRecords(); // Refresh the list
-      setHeartRate("72"); // Reset heart rate
-      setNotes(''); // Reset notes
+      fetchHeartRateRecords();
+      setHeartRate("72");
+      setNotes('');
     } catch (error) {
       Alert.alert('Error', 'Failed to save heart rate data.');
     }
@@ -150,6 +151,68 @@ const HeartRateScreen = ({ navigation }) => {
         <Text style={styles.recordLabel}>Notes:</Text> {item.notes || 'No notes'}
       </Text>
     </View>
+  );
+
+  // Render input form
+  const renderInputForm = () => (
+    <ScrollView style={styles.scrollView}>
+      {/* Heart Animation */}
+      <TouchableOpacity 
+        style={styles.heartAnimationContainer}
+        onPress={() => setShowHeartRatePicker(true)}
+      >
+        <View style={styles.heartRateCircle}>
+          <Text style={styles.currentHeartRate}>{heartRate}</Text>
+          <Text style={styles.bpmText}>BPM</Text>
+        </View>
+        <Text style={styles.tapToEdit}>Tap to edit</Text>
+      </TouchableOpacity>
+      
+      {/* Current Status */}
+      <View style={styles.statusCard}>
+        <Text style={styles.statusText}>
+          Your heart rate is in the <Text 
+            style={[styles.statusHighlight, {color: getHeartRateColor(heartRate)}]}
+          >
+            {getHeartRateZone(heartRate)}
+          </Text> zone
+        </Text>
+      </View>
+      
+      {/* Notes Input Section */}
+      <View style={styles.notesContainer}>
+        <Text style={styles.sectionTitle}>Notes</Text>
+        <TextInput
+          style={styles.notesInput}
+          placeholder="Add notes about your heart rate..."
+          multiline={true}
+          value={notes}
+          onChangeText={setNotes}
+        />
+      </View>
+      
+      {/* Date and Time */}
+      <View style={styles.dateTimeContainer}>
+        <Text style={styles.sectionTitle}>Date & Time</Text>
+        <View style={styles.dateTimeRow}>
+          <TouchableOpacity 
+            style={styles.dateSelector}
+            onPress={() => setShowDatePicker(true)}
+          >
+            <Text style={styles.dateTimeText}>{formatDate(date)}</Text>
+            <Text style={styles.iconText}>📅</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.timeSelector}
+            onPress={() => setShowTimePicker(true)}
+          >
+            <Text style={styles.dateTimeText}>{formatTime(date)}</Text>
+            <Text style={styles.iconText}>⏱️</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </ScrollView>
   );
 
   return (
@@ -176,67 +239,32 @@ const HeartRateScreen = ({ navigation }) => {
         </TouchableOpacity>
       </View>
       
-      <ScrollView style={styles.scrollView}>
-        {/* Heart Animation */}
+      {/* Tab buttons */}
+      <View style={styles.tabContainer}>
         <TouchableOpacity 
-          style={styles.heartAnimationContainer}
-          onPress={() => setShowHeartRatePicker(true)}
+          style={[styles.tabButton, activeTab === 'input' && styles.activeTab]}
+          onPress={() => setActiveTab('input')}
         >
-          <View style={styles.heartRateCircle}>
-            <Text style={styles.currentHeartRate}>{heartRate}</Text>
-            <Text style={styles.bpmText}>BPM</Text>
-          </View>
-          <Text style={styles.tapToEdit}>Tap to edit</Text>
-        </TouchableOpacity>
-        
-        {/* Current Status */}
-        <View style={styles.statusCard}>
-          <Text style={styles.statusText}>
-            Your heart rate is in the <Text 
-              style={[styles.statusHighlight, {color: getHeartRateColor(heartRate)}]}
-            >
-              {getHeartRateZone(heartRate)}
-            </Text> zone
+          <Text style={[styles.tabText, activeTab === 'input' && styles.activeTabText]}>
+            New Reading
           </Text>
-        </View>
-        
-        {/* Notes Input Section */}
-        <View style={styles.notesContainer}>
-          <Text style={styles.sectionTitle}>Notes</Text>
-          <TextInput
-            style={styles.notesInput}
-            placeholder="Add notes about your heart rate..."
-            multiline={true}
-            value={notes}
-            onChangeText={setNotes}
-          />
-        </View>
-        
-        {/* Date and Time */}
-        <View style={styles.dateTimeContainer}>
-          <Text style={styles.sectionTitle}>Date & Time</Text>
-          <View style={styles.dateTimeRow}>
-            <TouchableOpacity 
-              style={styles.dateSelector}
-              onPress={() => setShowDatePicker(true)}
-            >
-              <Text style={styles.dateTimeText}>{formatDate(date)}</Text>
-              <Text style={styles.iconText}>📅</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.timeSelector}
-              onPress={() => setShowTimePicker(true)}
-            >
-              <Text style={styles.dateTimeText}>{formatTime(date)}</Text>
-              <Text style={styles.iconText}>⏱️</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Heart Rate Records List */}
-        <View style={styles.recordsContainer}>
-          <Text style={styles.sectionTitle}>Heart Rate Records</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.tabButton, activeTab === 'records' && styles.activeTab]}
+          onPress={() => setActiveTab('records')}
+        >
+          <Text style={[styles.tabText, activeTab === 'records' && styles.activeTabText]}>
+            History
+          </Text>
+        </TouchableOpacity>
+      </View>
+      
+      {/* Content based on active tab */}
+      {activeTab === 'input' ? (
+        renderInputForm()
+      ) : (
+        <View style={styles.recordsListContainer}>
+          <Text style={styles.recordsTitle}>Heart Rate Records</Text>
           <FlatList
             data={heartRateRecords}
             keyExtractor={(item) => item.id}
@@ -246,7 +274,7 @@ const HeartRateScreen = ({ navigation }) => {
             }
           />
         </View>
-      </ScrollView>
+      )}
       
       {/* Heart Rate Picker Modal */}
       <Modal
@@ -323,9 +351,53 @@ const HeartRateScreen = ({ navigation }) => {
     </SafeAreaView>
   );
 };
+
 const { width } = Dimensions.get('window');
 
 const styles = StyleSheet.create({
+  // Add these new styles
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#f0f0f0',
+    padding: 5,
+    borderRadius: 10,
+    margin: 10,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  activeTab: {
+    backgroundColor: '#ffffff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  tabText: {
+    fontWeight: '500',
+    color: '#888',
+  },
+  activeTabText: {
+    color: '#00C2D4',
+    fontWeight: 'bold',
+  },
+  recordsListContainer: {
+    flex: 1,
+    padding: 15,
+    backgroundColor: '#f5f5f5',
+  },
+  recordsTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#333',
+  },
+  
+  // Existing styles
   recordsContainer: {
     backgroundColor: 'white',
     borderRadius: 15,
@@ -342,6 +414,11 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 10,
     marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
   },
   recordText: {
     fontSize: 14,
@@ -411,14 +488,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#00CDCE',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   currentHeartRate: {
-    fontSize: 48,
+    fontSize: 40,
     fontWeight: 'bold',
     color: 'white',
   },
@@ -428,59 +500,67 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
   tapToEdit: {
-    fontSize: 12,
+    marginTop: 10,
+    fontSize: 14,
     color: '#666',
-    marginTop: 5,
   },
   statusCard: {
     backgroundColor: 'white',
-    borderRadius: 15,
-    margin: 15,
+    borderRadius: 10,
     padding: 15,
+    margin: 15,
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 3,
+    elevation: 2,
   },
   statusText: {
     fontSize: 16,
-    color: '#333',
     textAlign: 'center',
+    color: '#444',
   },
   statusHighlight: {
     fontWeight: 'bold',
   },
   notesContainer: {
     backgroundColor: 'white',
-    borderRadius: 15,
-    margin: 15,
+    borderRadius: 10,
     padding: 15,
+    margin: 15,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#444',
   },
   notesInput: {
+    backgroundColor: '#f9f9f9',
+    padding: 10,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: '#e0e0e0',
-    borderRadius: 8,
-    padding: 10,
-    height: 80,
+    minHeight: 100,
     textAlignVertical: 'top',
+    fontSize: 14,
   },
   dateTimeContainer: {
     backgroundColor: 'white',
-    borderRadius: 15,
-    margin: 15,
+    borderRadius: 10,
     padding: 15,
+    margin: 15,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 3,
+    elevation: 2,
   },
   dateTimeRow: {
     flexDirection: 'row',
@@ -491,11 +571,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#f9f9f9',
+    padding: 10,
     borderWidth: 1,
     borderColor: '#e0e0e0',
     borderRadius: 8,
-    padding: 10,
+    backgroundColor: '#f9f9f9',
     marginRight: 5,
   },
   timeSelector: {
@@ -503,149 +583,54 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#f9f9f9',
+    padding: 10,
     borderWidth: 1,
     borderColor: '#e0e0e0',
     borderRadius: 8,
-    padding: 10,
+    backgroundColor: '#f9f9f9',
     marginLeft: 5,
   },
   dateTimeText: {
     fontSize: 14,
-    color: '#444',
+    color: '#333',
   },
   iconText: {
     fontSize: 16,
-    color: '#00CDCE',
-  },
-  chartContainer: {
-    backgroundColor: 'white',
-    borderRadius: 15,
-    margin: 15,
-    padding: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  chartContent: {
-    flexDirection: 'row',
-    height: 220,
-    marginTop: 10,
-  },
-  chartYAxis: {
-    width: 30,
-    height: '100%',
-    justifyContent: 'space-between',
-    paddingVertical: 10,
-  },
-  yAxisLabel: {
-    fontSize: 12,
-    color: '#666',
-    textAlign: 'right',
-  },
-  chartBars: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'flex-end',
-    paddingLeft: 10,
-    paddingBottom: 25,
-  },
-  barContainer: {
-    alignItems: 'center',
-    width: 35,
-  },
-  bar: {
-    width: 20,
-    borderRadius: 10,
-    marginBottom: 5,
-  },
-  barLabel: {
-    fontSize: 10,
-    color: '#666',
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 15,
-  },
-  zonesContainer: {
-    backgroundColor: 'white',
-    borderRadius: 15,
-    margin: 15,
-    padding: 15,
-    marginBottom: 30,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  zoneItem: {
-    marginBottom: 15,
-  },
-  zoneBar: {
-    height: 20,
-    borderRadius: 10,
-    marginBottom: 5,
-  },
-  zoneTextContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  zoneTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  zoneRange: {
-    fontSize: 14,
-    color: '#666',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   modalContent: {
     backgroundColor: 'white',
-    borderRadius: 15,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     padding: 20,
-    width: '80%',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
+    maxHeight: '80%',
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 20,
-    color: '#333',
+    textAlign: 'center',
+    marginBottom: 15,
+    color: '#444',
   },
   heartRateScrollView: {
-    maxHeight: 250,
-    width: '100%',
+    maxHeight: 300,
   },
   heartRateItem: {
-    paddingVertical: 12,
+    padding: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    alignItems: 'center',
+    borderBottomColor: '#f0f0f0',
   },
   heartRateItemSelected: {
-    backgroundColor: '#f0f8ff',
+    backgroundColor: '#f0f9fa',
   },
   heartRateItemText: {
-    fontSize: 18,
-    color: '#333',
+    fontSize: 16,
+    textAlign: 'center',
+    color: '#444',
   },
   heartRateItemTextSelected: {
     fontWeight: 'bold',
@@ -654,16 +639,14 @@ const styles = StyleSheet.create({
   modalButtonRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: '100%',
     marginTop: 20,
   },
   modalButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
     flex: 1,
-    margin: 5,
+    padding: 12,
+    borderRadius: 8,
     alignItems: 'center',
+    marginHorizontal: 5,
   },
   cancelButton: {
     backgroundColor: '#f0f0f0',

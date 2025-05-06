@@ -28,7 +28,7 @@ const LabResults = () => {
 
   useEffect(() => {
         navigation.setOptions({
-          headerTitle: 'Lab Results           ', // Centered title
+          headerTitle: '            Lab Results           ', // Centered title
           headerTitleAlign: 'center',
           headerStyle: {
             backgroundColor: '#00C2D4',
@@ -53,7 +53,7 @@ const LabResults = () => {
       }, [navigation]);
   
 
-  const API_URL = 'http:/10.102.128.137:8000';
+  const API_URL = 'http:/10.102.128.121:8000';
 
   const fetchLabResults = async () => {
     try {

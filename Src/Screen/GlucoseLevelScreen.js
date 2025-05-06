@@ -16,6 +16,7 @@ import {
 import DateTimePicker from '@react-native-community/datetimepicker';
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
 
 const GlucoseLevelScreen = ({ navigation }) => {
   const [glucoseData, setGlucoseData] = useState([]);
@@ -28,6 +29,9 @@ const GlucoseLevelScreen = ({ navigation }) => {
   const [unit, setUnit] = useState('mg/dL');
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
+  // Add editingItem state for tracking which item is being edited
+  const [editingItem, setEditingItem] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchGlucoseData = async () => {
     try {
@@ -58,6 +62,7 @@ const GlucoseLevelScreen = ({ navigation }) => {
 
   const saveReading = async () => {
     try {
+      setIsSubmitting(true);
       const user = auth().currentUser;
       if (!user) throw new Error('Please sign in to save readings');
 
@@ -71,33 +76,100 @@ const GlucoseLevelScreen = ({ navigation }) => {
         userId: user.uid,
       };
 
-      await firestore()
-        .collection('users')
-        .doc(user.uid)
-        .collection('vitalSigns')
-        .add(reading);
+      if (editingItem) {
+        // Update existing reading
+        await firestore()
+          .collection('users')
+          .doc(user.uid)
+          .collection('vitalSigns')
+          .doc(editingItem.id)
+          .update(reading);
+        Alert.alert('Success', 'Glucose reading updated successfully!');
+      } else {
+        // Add new reading
+        await firestore()
+          .collection('users')
+          .doc(user.uid)
+          .collection('vitalSigns')
+          .add(reading);
+        Alert.alert('Success', 'Glucose reading saved successfully!');
+      }
 
-      Alert.alert('Success', 'Glucose reading saved successfully!');
       setIsAdding(false); // Return to list view
+      setEditingItem(null); // Clear editing state
       fetchGlucoseData(); // Refresh the list
     } catch (error) {
       console.error('Save Error:', error);
       Alert.alert('Error', error.message || 'Failed to save. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
+  // Add edit function
+  const editReading = (item) => {
+    setEditingItem(item);
+    setGlucoseLevel(item.glucoseLevel.toString());
+    setMeasurementType(item.measurementType || 'Fasting');
+    setDate(new Date(item.date));
+    setTime(new Date(item.time));
+    setNotes(item.notes || '');
+    setIsAdding(true);
+  };
+
+  // Add delete function
+  const deleteReading = async (id) => {
+    try {
+      const user = auth().currentUser;
+      if (!user) throw new Error('Please sign in to delete readings');
+
+      await firestore()
+        .collection('users')
+        .doc(user.uid)
+        .collection('vitalSigns')
+        .doc(id)
+        .delete();
+
+      Alert.alert('Success', 'Glucose reading deleted successfully!');
+      fetchGlucoseData(); // Refresh the list
+    } catch (error) {
+      console.error('Delete Error:', error);
+      Alert.alert('Error', error.message || 'Failed to delete. Please try again.');
+    }
+  };
+
+  // Updated render item with edit and delete buttons
   const renderItem = ({ item }) => (
     <View style={styles.card}>
-      <Text style={styles.cardTitle}>🩸 Glucose Level</Text>
-      <Text style={styles.cardText}>Level: {item.glucoseLevel} {unit}</Text>
-      <Text style={styles.cardText}>Type: {item.measurementType}</Text>
-      <Text style={styles.cardText}>
-        Date: {item.date ? new Date(item.date).toLocaleDateString() : 'Unknown'}
-      </Text>
-      <Text style={styles.cardText}>
-        Time: {item.time ? new Date(item.time).toLocaleTimeString() : 'Unknown'}
-      </Text>
-      <Text style={styles.cardText}>Notes: {item.notes || 'None'}</Text>
+      <View style={styles.cardContent}>
+        <Text style={styles.cardTitle}>🩸 Glucose Level</Text>
+        <Text style={styles.cardText}>Level: {item.glucoseLevel} {unit}</Text>
+        <Text style={styles.cardText}>Type: {item.measurementType}</Text>
+        <Text style={styles.cardText}>
+          Date: {item.date ? new Date(item.date).toLocaleDateString() : 'Unknown'}
+        </Text>
+        <Text style={styles.cardText}>
+          Time: {item.time ? new Date(item.time).toLocaleTimeString() : 'Unknown'}
+        </Text>
+        <Text style={styles.cardText}>Notes: {item.notes || 'None'}</Text>
+      </View>
+      <View style={styles.cardActions}>
+        {/* Edit Button */}
+        <TouchableOpacity
+          onPress={() => editReading(item)}
+          style={styles.actionButton}
+        >
+          <FontAwesome name="edit" size={20} color="#4CAF50" />
+        </TouchableOpacity>
+  
+        {/* Delete Button */}
+        <TouchableOpacity
+          onPress={() => deleteReading(item.id)}
+          style={styles.actionButton}
+        >
+          <FontAwesome name="trash" size={20} color="#F44336" />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
@@ -105,15 +177,28 @@ const GlucoseLevelScreen = ({ navigation }) => {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => setIsAdding(false)}>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={() => {
+              setIsAdding(false);
+              setEditingItem(null); // Clear editing state when going back
+            }}
+            disabled={isSubmitting}
+          >
             <Image
               source={require('../../assets/custom-arrow.png')}
               style={styles.backArrowImage}
             />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Blood Glucose</Text>
-          <TouchableOpacity style={styles.saveButton} onPress={saveReading}>
-            <Text style={styles.saveButtonText}>SAVE</Text>
+          <TouchableOpacity 
+            style={[styles.saveButton, isSubmitting && styles.saveButtonDisabled]} 
+            onPress={saveReading}
+            disabled={isSubmitting}
+          >
+            <Text style={styles.saveButtonText}>
+              {isSubmitting ? 'Saving...' : 'SAVE'}
+            </Text>
           </TouchableOpacity>
         </View>
         <ScrollView style={styles.contentContainer}>
@@ -311,6 +396,9 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 14,
   },
+  saveButtonDisabled: {
+    opacity: 0.6,
+  },
   listContainer: {
     padding: 15,
   },
@@ -325,6 +413,9 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
+  cardContent: {
+    flex: 1,
+  },
   cardTitle: {
     fontSize: 16,
     fontWeight: 'bold',
@@ -335,6 +426,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#555',
     marginBottom: 3,
+  },
+  cardActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 10,
+  },
+  actionButton: {
+    marginHorizontal: 10,
+    padding: 5,
   },
   emptyList: {
     alignItems: 'center',
@@ -412,6 +512,10 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     backgroundColor: '#13b9c8',
   },
+  radioText: {
+    fontSize: 14,
+    color: '#333',
+  },
   dateTimeContainer: {
     flexDirection: 'row',
     marginBottom: 20,
@@ -428,20 +532,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e0e0e0',
     borderRadius: 4,
-    height: 40,
     paddingHorizontal: 10,
+    paddingVertical: 8,
   },
   dateTimeText: {
-    color: '#666',
+    fontSize: 14,
+    color: '#333',
   },
   notesInput: {
     backgroundColor: 'white',
     borderWidth: 1,
     borderColor: '#e0e0e0',
     borderRadius: 4,
+    padding: 10,
     height: 100,
     textAlignVertical: 'top',
-    padding: 10,
   },
 });
 
