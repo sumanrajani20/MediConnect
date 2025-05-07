@@ -16,6 +16,7 @@ import { Button } from 'react-native-paper';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
 
 const Radiology = ({ navigation }) => {
   const [images, setImages] = useState([]); // State to store radiology records
@@ -25,10 +26,12 @@ const Radiology = ({ navigation }) => {
   const [editingImage, setEditingImage] = useState(null); // Image being edited
   const [showImagePreview, setShowImagePreview] = useState(false); // Preview modal visibility
   const [previewImage, setPreviewImage] = useState(null); // Image being previewed
+  const [isDeleteConfirmationVisible, setIsDeleteConfirmationVisible] = useState(false); // Delete confirmation modal
+  const [imageToDelete, setImageToDelete] = useState(null); // Image to be deleted
 
   useEffect(() => {
     navigation.setOptions({
-      headerTitle: 'Radiology',
+      headerTitle: 'Radiology                ',
       headerTitleAlign: 'center',
       headerStyle: {
         backgroundColor: '#00C2D4',
@@ -221,6 +224,51 @@ const Radiology = ({ navigation }) => {
     }
   };
 
+  // Handle delete confirmation dialog
+  const handleDeletePress = (image) => {
+    setImageToDelete(image);
+    setIsDeleteConfirmationVisible(true);
+  };
+
+  // Cancel delete operation
+  const handleCancelDelete = () => {
+    setIsDeleteConfirmationVisible(false);
+    setImageToDelete(null);
+  };
+
+  // Confirm and execute delete operation
+  const handleConfirmDelete = async () => {
+    if (imageToDelete) {
+      try {
+        const userId = auth().currentUser?.uid;
+        if (!userId) throw new Error('User not signed in');
+
+        // Delete from Firestore
+        await firestore()
+          .collection('users')
+          .doc(userId)
+          .collection('radiology')
+          .doc(imageToDelete.id)
+          .delete();
+
+        // Update local state
+        setImages(prev => prev.filter(img => img.id !== imageToDelete.id));
+        
+        // Close modal and reset state
+        setIsDeleteConfirmationVisible(false);
+        setImageToDelete(null);
+        
+        // Show success message
+        Alert.alert('Success', 'X-ray record deleted successfully');
+      } catch (error) {
+        console.error('Error deleting record:', error);
+        Alert.alert('Error', error.message || 'Failed to delete record');
+        setIsDeleteConfirmationVisible(false);
+        setImageToDelete(null);
+      }
+    }
+  };
+
   return (
     <View style={styles.container}>
       {images.length === 0 ? (
@@ -264,18 +312,27 @@ const Radiology = ({ navigation }) => {
                   <Text style={styles.noNotes}>No notes added</Text>
                 )}
 
-                <TouchableOpacity
-                  style={styles.editNotesButton}
-                  onPress={() => {
-                    setEditingImage(item);
-                    setCurrentNote(item.notes || '');
-                    setIsAddNoteModalVisible(true);
-                  }}
-                >
-                  <Text style={styles.editNotesButtonText}>
-                    {item.notes ? 'Edit Notes' : 'Add Notes'}
-                  </Text>
-                </TouchableOpacity>
+                <View style={styles.actionButtonsContainer}>
+                  <TouchableOpacity
+                    style={styles.editNotesButton}
+                    onPress={() => {
+                      setEditingImage(item);
+                      setCurrentNote(item.notes || '');
+                      setIsAddNoteModalVisible(true);
+                    }}
+                  >
+                    <Text style={styles.editNotesButtonText}>
+                      {item.notes ? 'Edit Notes' : 'Add Notes'}
+                    </Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    style={styles.deleteButton}
+                    onPress={() => handleDeletePress(item)}
+                  >
+                    <FontAwesome name="trash" size={20} color="#F44336" />
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
           ))}
@@ -374,14 +431,44 @@ const Radiology = ({ navigation }) => {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        visible={isDeleteConfirmationVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={handleCancelDelete}
+      >
+        <View style={styles.deleteModalOverlay}>
+          <View style={styles.deleteModalContent}>
+            <Text style={styles.deleteModalTitle}>Delete X-ray Record</Text>
+            <Text style={styles.deleteModalMessage}>
+              Are you sure you want to delete this X-ray record? This action cannot be undone.
+            </Text>
+
+            <View style={styles.deleteModalButtons}>
+              <Button
+                mode="outlined"
+                onPress={handleCancelDelete}
+                style={styles.deleteModalCancelButton}
+              >
+                Cancel
+              </Button>
+              <Button
+                mode="contained"
+                onPress={handleConfirmDelete}
+                style={styles.deleteModalConfirmButton}
+                color="#D32F2F"
+              >
+                Delete
+              </Button>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
-
-
-
-
-
 
 const styles = StyleSheet.create({
   headerLeft: {
@@ -416,267 +503,265 @@ const styles = StyleSheet.create({
   },
   centerButton: {
     backgroundColor: '#00C2D4',
-    borderRadius: 8,
-    marginTop: 10,
+    borderRadius: 25,
+    marginTop: 20,
+    paddingHorizontal: 15,
   },
   addButtonLabel: {
     color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
   message: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#00BBD3',
+    fontSize: 16,
     textAlign: 'center',
-    marginBottom: 20,
+    color: '#546E7A',
+    marginHorizontal: 30,
   },
   imageRow: {
     flexDirection: 'row',
-    padding: 10,
+    padding: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    backgroundColor: 'white',
-    marginHorizontal: 8,
-    marginTop: 8,
-    borderRadius: 8,
+    borderBottomColor: '#E0E0E0',
+    backgroundColor: '#fff',
   },
   imageContainer: {
-    width: 100,
-    height: 100,
-    marginRight: 10,
+    marginRight: 15,
   },
   thumbnail: {
-    width: '100%',
-    height: '100%',
+    width: 80,
+    height: 80,
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ccc',
+    backgroundColor: '#f0f0f0',
   },
   detailsContainer: {
     flex: 1,
-    justifyContent: 'flex-start',
   },
   imageLabel: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
-    color: '#444',
+    color: '#263238',
+    marginBottom: 5,
   },
   imageDate: {
-    fontSize: 12,
-    color: '#888',
-    marginBottom: 6,
-  },
-  notesContainer: {
-    backgroundColor: '#f0f0f0',
-    padding: 6,
-    borderRadius: 4,
-    marginTop: 4,
+    fontSize: 14,
+    color: '#546E7A',
     marginBottom: 8,
   },
+  notesContainer: {
+    marginTop: 4,
+  },
   notesTitle: {
+    fontSize: 14,
     fontWeight: '600',
-    fontSize: 12,
-    color: '#555',
+    color: '#455A64',
   },
   notesText: {
-    fontSize: 12,
-    color: '#666',
+    fontSize: 14,
+    color: '#607D8B',
+    marginTop: 2,
   },
   noNotes: {
-    fontSize: 12,
-    color: '#999',
+    fontSize: 14,
+    color: '#90A4AE',
     fontStyle: 'italic',
-    marginVertical: 4,
+    marginTop: 5,
+  },
+  actionButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 10,
   },
   editNotesButton: {
-    marginTop: 4,
-    backgroundColor: '#e6f7f9',
-    padding: 6,
+    backgroundColor: '#E3F2FD',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
     borderRadius: 4,
     alignSelf: 'flex-start',
   },
   editNotesButtonText: {
-    color: '#00C2D4',
-    fontSize: 12,
+    color: '#1976D2',
+    fontSize: 14,
     fontWeight: '500',
+  },
+  deleteButton: {
+    backgroundColor: '#FFEBEE',
+    padding: 10,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 'auto',
   },
   floatingButton: {
     position: 'absolute',
-    right: 20,
-    bottom: 30,
+    bottom: 25,
+    right: 25,
     backgroundColor: '#00C2D4',
-    borderRadius: 30,
-    width: 60,
-    height: 60,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   floatingText: {
-    color: 'white',
-    fontSize: 30,
-    marginBottom: 2,
+    fontSize: 28,
+    color: '#FFFFFF',
+    fontWeight: 'bold',
   },
-  // Preview Modal Styles
   previewModalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'center',
     padding: 20,
   },
   previewModalContent: {
-    backgroundColor: 'white',
-    borderRadius: 12,
+    backgroundColor: '#fff',
+    borderRadius: 10,
     padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
     elevation: 5,
-    alignItems: 'center',
   },
   previewModalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#00C2D4',
+    color: '#263238',
     marginBottom: 15,
+    textAlign: 'center',
   },
   previewImage: {
     width: '100%',
     height: 300,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    marginBottom: 15,
     resizeMode: 'contain',
+    borderRadius: 8,
+    marginBottom: 20,
   },
   validationNoteContainer: {
-    backgroundColor: '#fff3cd',
-    borderColor: '#ffeeba',
-    borderWidth: 1,
-    borderRadius: 6,
+    backgroundColor: '#FFF8E1',
     padding: 10,
-    marginBottom: 15,
-    width: '100%',
+    borderRadius: 6,
+    marginBottom: 20,
   },
   validationNoteText: {
-    color: '#856404',
+    color: '#F57C00',
     fontSize: 14,
-    textAlign: 'center',
   },
   previewModalButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: '100%',
   },
   previewModalCancelButton: {
     flex: 1,
     marginRight: 10,
-    borderColor: '#999',
+    borderColor: '#CFD8DC',
   },
   previewModalConfirmButton: {
     flex: 1,
     marginLeft: 10,
     backgroundColor: '#00C2D4',
   },
-  // Existing Modal Styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: '#000000cc',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  fullImage: {
-    width: '100%',
-    height: '60%',
-    borderRadius: 8,
-    marginBottom: 15,
-    resizeMode: 'contain',
-  },
-  modalImageLabel: {
-    color: 'white',
-    fontSize: 16,
-    marginBottom: 5,
-  },
-  modalNotesContainer: {
-    backgroundColor: '#ffffff22',
-    padding: 10,
-    borderRadius: 8,
-    marginVertical: 10,
-    width: '100%',
-  },
-  modalNotesTitle: {
-    color: 'white',
-    fontWeight: '600',
-    marginBottom: 5,
-  },
-  modalNotesText: {
-    color: 'white',
-  },
-  modalButtonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    marginVertical: 10,
-  },
-  deleteBtn: {
-    flex: 1,
-    marginRight: 10,
-    borderColor: '#ff6b6b',
-    backgroundColor: '#ff6b6b22',
-  },
-  editNotesBtn: {
-    flex: 1,
-    marginLeft: 10,
-    borderColor: '#00C2D4',
-    backgroundColor: '#00C2D422',
-  },
-  closeBtn: {
-    width: '100%',
-    backgroundColor: '#00C2D4',
-  },
   notesModalContainer: {
     flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
     padding: 20,
   },
   notesModalContent: {
-    backgroundColor: 'white',
-    borderRadius: 8,
+    backgroundColor: '#fff',
+    borderRadius: 10,
     padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
     elevation: 5,
   },
   notesModalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#00C2D4',
-    marginBottom: 5,
-  },
-  notesModalImageName: {
-    fontSize: 14,
-    color: '#555',
+    color: '#263238',
     marginBottom: 15,
+    textAlign: 'center',
   },
   notesInput: {
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 10,
-    fontSize: 14,
-    minHeight: 100,
+    borderColor: '#CFD8DC',
+    borderRadius: 6,
+    padding: 12,
+    height: 120,
     textAlignVertical: 'top',
+    fontSize: 16,
+    color: '#455A64',
+    backgroundColor: '#F5F7FA',
+    marginBottom: 20,
   },
   notesModalButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 20,
   },
   notesModalCancelButton: {
     flex: 1,
     marginRight: 10,
-    borderColor: '#999',
+    borderColor: '#CFD8DC',
   },
   notesModalSaveButton: {
     flex: 1,
     marginLeft: 10,
     backgroundColor: '#00C2D4',
+  },
+  // Delete confirmation modal styles
+  deleteModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  deleteModalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  deleteModalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#D32F2F',
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  deleteModalMessage: {
+    fontSize: 16,
+    color: '#455A64',
+    marginBottom: 20,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  deleteModalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  deleteModalCancelButton: {
+    flex: 1,
+    marginRight: 10,
+    borderColor: '#CFD8DC',
+  },
+  deleteModalConfirmButton: {
+    flex: 1,
+    marginLeft: 10,
+    backgroundColor: '#D32F2F',
   },
 });
 
