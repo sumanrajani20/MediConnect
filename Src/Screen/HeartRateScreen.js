@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { saveHeartRateData, getHeartRateData } from '../../services/VitalSignsService';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
 
 const HeartRateScreen = ({ navigation }) => {
   // State variables
@@ -27,6 +28,9 @@ const HeartRateScreen = ({ navigation }) => {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [heartRateRecords, setHeartRateRecords] = useState([]);
   const [activeTab, setActiveTab] = useState('input'); // 'input' or 'records'
+  // Add these new state variables for editing
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingRecordId, setEditingRecordId] = useState(null);
 
   // Fetch heart rate records on component mount
   useEffect(() => {
@@ -109,6 +113,54 @@ const HeartRateScreen = ({ navigation }) => {
     setDate(newDate);
   };
   
+  // Reset form fields
+  const resetForm = () => {
+    setHeartRate("72");
+    setDate(new Date());
+    setNotes('');
+    setIsEditing(false);
+    setEditingRecordId(null);
+  };
+  
+  // Handle edit record
+  const handleEditRecord = (record) => {
+    setHeartRate(record.bpm.toString());
+    setDate(new Date(record.date));
+    setNotes(record.notes || '');
+    setIsEditing(true);
+    setEditingRecordId(record.id);
+    setActiveTab('input'); // Switch to input tab for editing
+  };
+  
+  // Handle delete record
+  const handleDeleteRecord = (recordId) => {
+    Alert.alert(
+      'Delete Record',
+      'Are you sure you want to delete this heart rate record?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              // Import your delete function from the service
+              // Assuming there's a deleteHeartRateData function in your service
+              // await deleteHeartRateData(recordId);
+              
+              // For now, let's filter the records locally (update this with your actual delete logic)
+              const updatedRecords = heartRateRecords.filter(record => record.id !== recordId);
+              setHeartRateRecords(updatedRecords);
+              Alert.alert('Success', 'Heart rate record deleted successfully!');
+            } catch (error) {
+              Alert.alert('Error', 'Failed to delete heart rate record.');
+            }
+          }
+        }
+      ]
+    );
+  };
+  
   // Handle save button press
   const handleSave = async () => {
     const numRate = parseInt(heartRate, 10);
@@ -125,11 +177,29 @@ const HeartRateScreen = ({ navigation }) => {
     };
 
     try {
-      await saveHeartRateData(heartRateData);
-      Alert.alert('Success', 'Heart rate data saved successfully!');
+      if (isEditing && editingRecordId) {
+        // Update existing record
+        // Assuming there's an updateHeartRateData function in your service
+        // await updateHeartRateData(editingRecordId, heartRateData);
+        
+        // For now, let's update the records locally (update this with your actual update logic)
+        const updatedRecords = heartRateRecords.map(record => {
+          if (record.id === editingRecordId) {
+            return { ...record, ...heartRateData };
+          }
+          return record;
+        });
+        
+        setHeartRateRecords(updatedRecords);
+        Alert.alert('Success', 'Heart rate data updated successfully!');
+      } else {
+        // Create new record
+        await saveHeartRateData(heartRateData);
+        Alert.alert('Success', 'Heart rate data saved successfully!');
+      }
+      
       fetchHeartRateRecords();
-      setHeartRate("72");
-      setNotes('');
+      resetForm();
     } catch (error) {
       Alert.alert('Error', 'Failed to save heart rate data.');
     }
@@ -150,6 +220,23 @@ const HeartRateScreen = ({ navigation }) => {
       <Text style={styles.recordText}>
         <Text style={styles.recordLabel}>Notes:</Text> {item.notes || 'No notes'}
       </Text>
+      
+      {/* Action buttons at the bottom right */}
+      <View style={styles.actionButtonsContainer}>
+        <TouchableOpacity
+          onPress={() => handleEditRecord(item)}
+          style={styles.actionButton}
+        >
+          <FontAwesome name="edit" size={20} color="#4CAF50" />
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          onPress={() => handleDeleteRecord(item.id)}
+          style={styles.actionButton}
+        >
+          <FontAwesome name="trash" size={20} color="#F44336" />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
@@ -230,12 +317,16 @@ const HeartRateScreen = ({ navigation }) => {
             style={styles.backArrowImage}
           />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Heart Rate</Text>
+        <Text style={styles.headerTitle}>
+          {isEditing ? 'Edit Heart Rate' : 'Heart Rate'}
+        </Text>
         <TouchableOpacity 
           style={styles.saveButton}
           onPress={handleSave}
         >
-          <Text style={styles.saveButtonText}>SAVE</Text>
+          <Text style={styles.saveButtonText}>
+            {isEditing ? 'UPDATE' : 'SAVE'}
+          </Text>
         </TouchableOpacity>
       </View>
       
@@ -246,12 +337,17 @@ const HeartRateScreen = ({ navigation }) => {
           onPress={() => setActiveTab('input')}
         >
           <Text style={[styles.tabText, activeTab === 'input' && styles.activeTabText]}>
-            New Reading
+            {isEditing ? 'Edit Reading' : 'New Reading'}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={[styles.tabButton, activeTab === 'records' && styles.activeTab]}
-          onPress={() => setActiveTab('records')}
+          onPress={() => {
+            setActiveTab('records');
+            if (isEditing) {
+              resetForm();
+            }
+          }}
         >
           <Text style={[styles.tabText, activeTab === 'records' && styles.activeTabText]}>
             History
@@ -419,6 +515,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 1,
+    position: 'relative', // Add this for absolute positioning of action buttons
   },
   recordText: {
     fontSize: 14,
@@ -661,6 +758,17 @@ const styles = StyleSheet.create({
   modalButtonTextConfirm: {
     color: 'white',
     fontWeight: 'bold',
+  },
+  // Add these for action buttons
+  actionButtonsContainer: {
+    position: 'absolute',
+    bottom: 10,
+    right: 15,
+    flexDirection: 'row',
+  },
+  actionButton: {
+    marginLeft: 15,
+    padding: 5,
   },
 });
 
